@@ -129,7 +129,7 @@ def degron(variant_list,
 def ub_site(variant_list,
             tx, ub_intervals,
             nuc_context=3,
-            num_simulations=1000):
+            num_simulations=10000):
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
@@ -154,7 +154,7 @@ def ub_site(variant_list,
     random_sub = seq_context.random_pos(trinuc_count, num_simulations)
 
     # evaluate the simulations
-    ub_ct_list = []
+    ub_ct, iter_sim = 0, 0
     tmp_mut_pos = np.hstack(abs_pos for ctxt, cds_pos, abs_pos in random_sub)
     for sim_pos in tmp_mut_pos:
         # get the variant effect for simulated mutations
@@ -164,10 +164,20 @@ def ub_site(variant_list,
         sim_num_mut = 0
         for sim_variant in sim_variant_subs:
             sim_num_mut += utils.overlap_with_intervals(sim_variant, ub_intervals)
-        ub_ct_list.append(sim_num_mut)
+
+        # count if exceeds observed statistic
+        if sim_num_mut >= num_ub_mut:
+            ub_ct += 1
+
+        # update iteration counter
+        iter_sim += 1
+
+        # stop if sufficient number of simulations reached
+        if ub_ct>=100:
+            break
 
     # calculate p-value
-    ub_pval = np.sum(1 for x in ub_ct_list if x>=num_ub_mut) / float(num_simulations)
+    ub_pval = ub_ct / float(iter_sim)
 
     return num_ub_mut, ub_pval
 
