@@ -1,9 +1,9 @@
 """
-File: gata3_null.py
+File: statistical_test.py
 Author: Collin Tokheim
 Email: ctokheim@mail.dfci.harvard.edu
 Github: ctokheim
-Description: Build gata3 null distribution
+Description: Build null distribution
 """
 import argparse
 import pandas as pd
@@ -34,6 +34,9 @@ def parse_arguments():
     parser.add_argument('-d', '--degrons',
                         type=str, default=None,
                         help='Degron locations')
+    parser.add_argument('-u', '--ub-sites',
+                        type=str, default=None,
+                        help='UB sites')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
                         help='Number of processes')
@@ -75,7 +78,8 @@ def multiprocess_permutation(opts):
             pool.close()
             pool.join()
     else:
-        analysis_type = 'degrons' if opts['degrons'] else 'lysine'
+        #analysis_type = 'degrons' if opts['degrons'] else 'lysine'
+        analysis_type = 'ub'
         result_list += analyze(opts, analysis=analysis_type)
 
     return result_list
@@ -95,6 +99,12 @@ def analyze(opts, chrom=None, analysis='degrons'):
     # read in the degron data
     if analysis == 'degrons':
         degron_intvls = utils.read_degron_intervals(opts['degrons'])
+    if analysis == 'ub':
+        ub_intvls = utils.read_ub_sites(opts['ub_sites'])
+    # read the c-terminus classifier
+    if analysis == 'cterminus':
+        clf1 = degron_pred.load_classifier('data/logistic_regression_pos_specific_dinuc.pickle')
+        clf2 = degron_pred.load_classifier('data/logistic_regression_bag_of_words.pickle')
 
     # iterate over each gene in the MAF file
     output_list = []
@@ -108,6 +118,10 @@ def analyze(opts, chrom=None, analysis='degrons'):
         if analysis == 'degrons' and gene not in degron_intvls:
             continue
 
+        # only consider genes with ub sites
+        if analysis == 'ub' and ensembl_tx_name not in ub_intvls:
+            continue
+
         # skip non-protein coding genes
         if tx.biotype != 'protein_coding' or not tx.complete:
             continue
@@ -115,6 +129,10 @@ def analyze(opts, chrom=None, analysis='degrons'):
         # calculate the significance
         if analysis == 'degrons':
             results = simulation.degron(variant_list, tx, degron_intvls[gene])
+        elif analysis == 'cterminus':
+            results = simulation.cterm_degron(variant_list, tx, clf1, clf2)
+        elif analysis == 'ub':
+            results = simulation.ub_site(variant_list, tx, ub_intvls[ensembl_tx_name])
         else:
             results = simulation.lysine_mutations(variant_list, tx)
 
@@ -233,6 +251,8 @@ def main(opts):
     # format the output
     if opts['degrons']:
         output_df = utils.process_degron_results(results)
+    elif opts['ub_sites']:
+        output_df = utils.process_ub_results(results)
     else:
         output_df = utils.process_lysine_results(results)
 

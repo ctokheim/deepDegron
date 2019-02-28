@@ -90,12 +90,31 @@ def read_degron_intervals(path):
     return degron_dict
 
 
-def overlap_degrons(myvariant, degron_intervals):
+def read_ub_sites(path):
+    """Read in the sites of degrons."""
+    with open(path) as handle:
+        myreader = csv.reader(handle, delimiter='\t')
+        header = next(myreader)
+        pos_ix = header.index('MOD_RSD')
+        enst_ix = header.index('ENST')
+
+        ub_dict = {}
+        for line in myreader:
+            enst = line[enst_ix]
+            pos = int(line[pos_ix])
+
+            # add interval
+            ub_dict.setdefault(enst, [])
+            ub_dict[enst].append((pos, pos))
+    return ub_dict
+
+
+def overlap_with_intervals(myvariant, intervals):
     """Check if variant is in any degron."""
     is_sub = myvariant.__class__ is varcode.effects.Substitution
     if is_sub:
-        is_in_degron = variants.is_overlap(myvariant.aa_mutation_start_offset+1, degron_intervals)
-        if is_in_degron:
+        is_in_intvl = variants.is_overlap(myvariant.aa_mutation_start_offset+1, intervals)
+        if is_in_intvl:
             return 1
     return 0
 
@@ -103,6 +122,14 @@ def overlap_degrons(myvariant, degron_intervals):
 def process_degron_results(output_list):
     """Process the results from the degron enrichment analysis."""
     mycols = ['gene', 'num_degron_muts', 'pvalue']
+    output_df = pd.DataFrame(output_list, columns=mycols)
+    output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
+    return output_df
+
+
+def process_ub_results(output_list):
+    """Process the results from the degron enrichment analysis."""
+    mycols = ['gene', 'num_ub_site_muts', 'pvalue']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
