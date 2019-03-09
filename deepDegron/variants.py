@@ -95,6 +95,7 @@ def get_mutation_info(pos, tx, original_dna_change):
         sim_variants.append(read_variant(new_var_info, tx))
     return sim_variants
 
+
 def is_overlap(var_pos, intervals):
     """Overlap a position with a set of intervals"""
     for s, e in intervals:

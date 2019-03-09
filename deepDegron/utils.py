@@ -90,7 +90,7 @@ def read_degron_intervals(path):
     return degron_dict
 
 
-def read_ub_sites(path):
+def read_sites(path, num_flank):
     """Read in the sites of degrons."""
     with open(path) as handle:
         myreader = csv.reader(handle, delimiter='\t')
@@ -105,7 +105,7 @@ def read_ub_sites(path):
 
             # add interval
             ub_dict.setdefault(enst, [])
-            ub_dict[enst].append((pos, pos))
+            ub_dict[enst].append((pos-num_flank, pos+num_flank))
     return ub_dict
 
 

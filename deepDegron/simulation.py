@@ -126,7 +126,7 @@ def degron(variant_list,
     return num_deg_mut, deg_pval
 
 
-def ub_site(variant_list,
+def site(variant_list,
             tx, ub_intervals,
             nuc_context=3,
             num_simulations=10000):

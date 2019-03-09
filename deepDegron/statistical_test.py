@@ -34,9 +34,12 @@ def parse_arguments():
     parser.add_argument('-d', '--degrons',
                         type=str, default=None,
                         help='Degron locations')
-    parser.add_argument('-u', '--ub-sites',
+    parser.add_argument('-s', '--sites',
                         type=str, default=None,
-                        help='UB sites')
+                        help='Sites of interest')
+    parser.add_argument('-f', '--flank',
+                        type=int, default=0,
+                        help='Number of flanking residues to consider')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
                         help='Number of processes')
@@ -79,7 +82,7 @@ def multiprocess_permutation(opts):
             pool.join()
     else:
         #analysis_type = 'degrons' if opts['degrons'] else 'lysine'
-        analysis_type = 'ub'
+        analysis_type = 'sites'
         result_list += analyze(opts, analysis=analysis_type)
 
     return result_list
@@ -88,7 +91,12 @@ def multiprocess_permutation(opts):
 def singleprocess_permutation(info):
     """Unpacks the multiprocess input"""
     options, mychr = info
-    analysis_type = 'degrons' if options['degrons'] else 'lysine'
+    if options['degrons']:
+        analysis_type = 'degrons'
+    elif options['sites']:
+        analysis_type = 'sites'
+    else:
+        analysis_type = 'lysine'
     return analyze(opts, chrom=mychr, analysis=analysis_type)
 
 
@@ -99,8 +107,8 @@ def analyze(opts, chrom=None, analysis='degrons'):
     # read in the degron data
     if analysis == 'degrons':
         degron_intvls = utils.read_degron_intervals(opts['degrons'])
-    if analysis == 'ub':
-        ub_intvls = utils.read_ub_sites(opts['ub_sites'])
+    if analysis == 'sites':
+        ub_intvls = utils.read_sites(opts['sites'], opts['flank'])
     # read the c-terminus classifier
     if analysis == 'cterminus':
         clf1 = degron_pred.load_classifier('data/logistic_regression_pos_specific_dinuc.pickle')
@@ -119,7 +127,7 @@ def analyze(opts, chrom=None, analysis='degrons'):
             continue
 
         # only consider genes with ub sites
-        if analysis == 'ub' and ensembl_tx_name not in ub_intvls:
+        if analysis == 'sites' and ensembl_tx_name not in ub_intvls:
             continue
 
         # skip non-protein coding genes
@@ -131,8 +139,8 @@ def analyze(opts, chrom=None, analysis='degrons'):
             results = simulation.degron(variant_list, tx, degron_intvls[gene])
         elif analysis == 'cterminus':
             results = simulation.cterm_degron(variant_list, tx, clf1, clf2)
-        elif analysis == 'ub':
-            results = simulation.ub_site(variant_list, tx, ub_intvls[ensembl_tx_name])
+        elif analysis == 'sites':
+            results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name])
         else:
             results = simulation.lysine_mutations(variant_list, tx)
 
@@ -251,7 +259,7 @@ def main(opts):
     # format the output
     if opts['degrons']:
         output_df = utils.process_degron_results(results)
-    elif opts['ub_sites']:
+    elif opts['sites']:
         output_df = utils.process_ub_results(results)
     else:
         output_df = utils.process_lysine_results(results)
