@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 import pickle
+import utils
 
 vocab = ['A', 'R', 'N', 'D', 'C',
          'E', 'Q', 'G', 'H', 'I',
@@ -29,15 +30,18 @@ def kmer_count(seq):
 def binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False):
     """This function performs bag of words on separate substrings"""
     # split up the bag of words into separate bins
-    chunk_size = round(n/splits)
-    xlist = []
-    for j in range(splits):
-        if j == (splits-1):
-            tmp_x = vectorizer.transform(pep_sequence.str[:-j*chunk_size])
-        else:
-            tmp_x = vectorizer.transform(pep_sequence.str[-(j+1)*chunk_size:-j*chunk_size])
-        xlist.append(tmp_x.toarray())
-    out = np.concatenate(xlist, axis=1)
+    if splits > 1:
+        chunk_size = round(n/splits)
+        xlist = []
+        for j in range(splits):
+            if j == (splits-1):
+                tmp_x = vectorizer.transform(pep_sequence.str[:-j*chunk_size])
+            else:
+                tmp_x = vectorizer.transform(pep_sequence.str[-(j+1)*chunk_size:-j*chunk_size])
+            xlist.append(tmp_x.toarray())
+        out = np.concatenate(xlist, axis=1)
+    else:
+        out = vectorizer.transform(pep_sequence)
 
     # add c-terminal dinucleotides
     if dinuc:
@@ -53,18 +57,36 @@ def load_classifier(file_path):
     return clf
 
 
-def delta_prob(variants, clf1, clf2):
+def delta_prob(variants, tx, clf1, clf2):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
-    cterm_seq = [v.mutant_protein_sequence[-23:]
-                 for v in variants
-                 if v.mutant_protein_sequence and
-                    v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23)
-                ]
+    #cterm_seq = [v.mutant_protein_sequence[-23:]
+                 #for v in variants
+                 #if v.mutant_protein_sequence and
+                    #((type(v) in utils.indels) or
+                    #((type(v) in utils.base_substitutions) &
+                    #(v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23))))
+                #]
+    cterm_seq = []
+    for v in variants:
+        if v.mutant_protein_sequence:
+            if type(v) in utils.indels:
+                #cterm_seq.append(v.mutant_protein_sequence[-23:])
+                pass
+            elif type(v) in utils.base_substitutions:
+                try:
+                    if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
+                        cterm_seq.append(v.mutant_protein_sequence[-23:])
+                except:
+                    print(v)
+                    raise
 
-    # return None if
+    # return None if no variants
     if not cterm_seq:
+        return 0
+    # return None if U in protein sequence
+    if 'U' in tx.protein_sequence[-23:]:
         return 0
 
     # construct dataframe
@@ -79,7 +101,18 @@ def delta_prob(variants, clf1, clf2):
     result_df['prob2'] = clf2.predict_proba(X2)[:, 1]
     result_df['delta prob'] = result_df['prob'] - result_df['prob2']
 
+    # adjust for baseline score
+    wt_seq = tx.protein_sequence[-23:]
+    wt_df = pd.DataFrame({'seq': [wt_seq]})
+    # create feature matrix
+    X = binned_bag_of_words(wt_df['seq'], 23, dinuc=True)
+    X2 = binned_bag_of_words(wt_df['seq'], 1)
+    wt_df['prob'] = clf1.predict_proba(X)[:, 1]
+    wt_df['prob2'] = clf2.predict_proba(X2)[:, 1]
+    wt_df['delta prob'] = wt_df['prob'] - wt_df['prob2']
+    baseline = wt_df['delta prob'].iloc[0]
+
     # add up scores
-    delta_prob_sum = result_df['delta prob'].sum()
+    delta_prob_sum = (result_df['delta prob'] - baseline).sum()
 
     return delta_prob_sum

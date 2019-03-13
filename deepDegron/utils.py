@@ -39,7 +39,7 @@ def rev_comp(seq):
     return rev_comp_seq
 
 
-def nmd(variant_list, tx):
+def nmd(variant_list, tx, drop=False):
     """This function is meant to identify whether an early stop codon
     will cause NMD."""
     # length of normal protein sequence
@@ -57,11 +57,20 @@ def nmd(variant_list, tx):
     nmd_sensitive_list = []
     for var in variant_list:
         if not var.mutant_protein_sequence:
-            nmd_sensitive_list.append(0.5)
+            if drop:
+                nmd_sensitive_list.append(var)
+            else:
+                nmd_sensitive_list.append(0.5)
         elif len(var.mutant_protein_sequence) > (normal_prot_len - nmd_insensitive_len):
-            nmd_sensitive_list.append(0)
+            if drop:
+                nmd_sensitive_list.append(var)
+            else:
+                nmd_sensitive_list.append(0)
         else:
-            nmd_sensitive_list.append(1)
+            if drop:
+                pass
+            else:
+                nmd_sensitive_list.append(1)
 
     return nmd_sensitive_list
 
@@ -143,3 +152,12 @@ def process_lysine_results(output_list):
     output_df['new_lys_qvalue'] = pvalue.bh_fdr(output_df['new_lys_pvalue'])
     output_df['lost_lys_qvalue'] = pvalue.bh_fdr(output_df['lost_lys_pvalue'])
     return output_df
+
+
+def process_cterm_degron_results(output_list):
+    """Process the results from cterminal degron mutation analysis."""
+    mycols = ['gene', 'delta_reg_potential', 'pvalue']
+    output_df = pd.DataFrame(output_list, columns=mycols)
+    output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
+    return output_df
+

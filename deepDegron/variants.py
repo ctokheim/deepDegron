@@ -3,6 +3,7 @@ from varcode.effects import *
 from pyensembl import ensembl_grch37, EnsemblRelease
 import csv
 import itertools as it
+import utils
 
 def read_variant(var_info, tx):
     """Annotate a variant on a specific transcript."""
@@ -84,15 +85,20 @@ def get_mutation_info(pos, tx, original_dna_change):
         if is_del:
             len_del = len(ref)
             tmp_offset_pos = tx.spliced_offset(int(new_pos)) - start_offset
-            new_ref = tx.coding_sequence[tmp_offset_pos:tmp_offset_pos+len_del]
-            if tx.strand=='-':
+            if tx.strand == '+':
+                new_ref = tx.coding_sequence[tmp_offset_pos:tmp_offset_pos+len_del]
+            elif tx.strand == '-':
+                new_ref = tx.coding_sequence[tmp_offset_pos:tmp_offset_pos+len_del]
                 new_ref = ''.join(utils.base_pairing[x]
-                                  for x in new_ref)
+                                  for x in new_ref)[::-1]
             new_var_info = [contig, new_pos, new_ref, alt]
         else:
             new_var_info = [contig, new_pos, ref, alt]
 
-        sim_variants.append(read_variant(new_var_info, tx))
+        try:
+            sim_variants.append(read_variant(new_var_info, tx))
+        except:
+            pass
     return sim_variants
 
 

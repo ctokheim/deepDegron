@@ -127,9 +127,9 @@ def degron(variant_list,
 
 
 def site(variant_list,
-            tx, ub_intervals,
-            nuc_context=3,
-            num_simulations=10000):
+         tx, ub_intervals,
+         nuc_context=3,
+         num_simulations=10000):
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
@@ -141,7 +141,7 @@ def site(variant_list,
     # create sequence context obj
     seq_context = sc.SequenceContext(tx, nuc_context)
 
-    # figure out how many affect lysines
+    # figure out how many overlap sites of interest
     num_ub_mut = 0
     for myvariant in var_sub:
         num_ub_mut += utils.overlap_with_intervals(myvariant, ub_intervals)
@@ -185,7 +185,7 @@ def site(variant_list,
 def cterm_degron(variant_list,
                  tx, clf1, clf2,
                  nuc_context=3,
-                 num_simulations=1000):
+                 num_simulations=10000):
     """Simulate the affect of mutations on c-terminal degrons.
 
     """
@@ -193,38 +193,64 @@ def cterm_degron(variant_list,
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
 
+    # filter for indel variants
+    var_indel = [x for x in variant_list
+                 if x.__class__ in utils.indels
+                 and x.variant.is_indel]
+    dna_change_indel = [[v.variant.contig, v.variant.start, v.variant.ref, v.variant.alt]
+                        for v in var_indel]
+    var_indel = utils.nmd(var_indel, tx, drop=True)
+
     # return if no substitution
-    if not var_sub:
+    if not var_sub and not var_indel:
         return None
 
-    # create sequence context obj
-    seq_context = sc.SequenceContext(tx, nuc_context)
-
-    # figure out how many affect lysines
-    delta_prob = degron_pred.delta_prob(var_sub, clf1, clf2)
+    # figure out the affect on cterminal degrons
+    delta_prob = degron_pred.delta_prob(var_sub+var_indel, tx, clf1, clf2)
 
     # skip if no c-terminal variants
     if not delta_prob:
         return 0, 1
 
+    # create sequence context obj
+    seq_context = sc.SequenceContext(tx, nuc_context)
+    seq_context_indel = sc.SequenceContext(tx, 0)
+
     # simulate new mutations
-    random_sub = seq_context.random_pos(trinuc_count, num_simulations)
+    if var_sub:
+        random_sub = seq_context.random_pos(trinuc_count, num_simulations)
+        tmp_mut_pos = np.hstack(abs_pos for ctxt, cds_pos, abs_pos in random_sub)
+    # there is no sequence context for indels
+    if var_indel:
+        tmp_input = [('None', len(var_indel))]
+        random_indel = seq_context_indel.random_pos(tmp_input, num_simulations)
+        tmp_mut_pos_indel = random_indel[0][2]
 
     # evaluate the simulations
     delta_prob_ct, iter_sim = 0, 0
-    tmp_mut_pos = np.hstack(abs_pos for ctxt, cds_pos, abs_pos in random_sub)
-    for sim_pos in tmp_mut_pos:
-        # get the variant effect for simulated mutations
-        sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
+    #for sim_pos in tmp_mut_pos:
+    for i in range(num_simulations):
+        # get info for substitutions
+        if var_sub:
+            sim_pos = tmp_mut_pos[i, :]
+            sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
+        else:
+            sim_variant_subs = []
+
+        # get info for indel
+        if var_indel:
+            sim_pos_indel = tmp_mut_pos_indel[i, :]
+            sim_variant_indel = variants.get_mutation_info(sim_pos_indel, tx, dna_change_indel)
+            # filter based on nmd
+            sim_variant_indel = utils.nmd(sim_variant_indel, tx, drop=True)
+        else:
+            sim_variant_indel = []
 
         # get scores from simulations
-        sim_delta_prob = degron_pred.delta_prob(sim_variant_subs, clf1, clf2)
-
-        import IPython ; IPython.embed()
-        raise
+        sim_delta_prob = degron_pred.delta_prob(sim_variant_subs+sim_variant_indel, tx, clf1, clf2)
 
         # count if exceeds observed statistic
-        if sim_delta_prob >= delta_prob:
+        if abs(sim_delta_prob) >= abs(delta_prob):
             delta_prob_ct += 1
 
         # update number of iterations

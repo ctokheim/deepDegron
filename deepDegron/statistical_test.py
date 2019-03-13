@@ -37,6 +37,9 @@ def parse_arguments():
     parser.add_argument('-s', '--sites',
                         type=str, default=None,
                         help='Sites of interest')
+    parser.add_argument('-c', '--cterm-models',
+                        type=str, default=None,
+                        help='Path to saved cterminal degron models')
     parser.add_argument('-f', '--flank',
                         type=int, default=0,
                         help='Number of flanking residues to consider')
@@ -82,7 +85,7 @@ def multiprocess_permutation(opts):
             pool.join()
     else:
         #analysis_type = 'degrons' if opts['degrons'] else 'lysine'
-        analysis_type = 'sites'
+        analysis_type = 'cterminus'
         result_list += analyze(opts, analysis=analysis_type)
 
     return result_list
@@ -95,6 +98,8 @@ def singleprocess_permutation(info):
         analysis_type = 'degrons'
     elif options['sites']:
         analysis_type = 'sites'
+    elif options['cterm_models']:
+        analysis_type = 'cterminus'
     else:
         analysis_type = 'lysine'
     return analyze(opts, chrom=mychr, analysis=analysis_type)
@@ -111,8 +116,11 @@ def analyze(opts, chrom=None, analysis='degrons'):
         ub_intvls = utils.read_sites(opts['sites'], opts['flank'])
     # read the c-terminus classifier
     if analysis == 'cterminus':
-        clf1 = degron_pred.load_classifier('data/logistic_regression_pos_specific_dinuc.pickle')
-        clf2 = degron_pred.load_classifier('data/logistic_regression_bag_of_words.pickle')
+        clf1_path, clf2_path = opts['cterm_models'].split(',')
+        clf1 = degron_pred.load_classifier(clf1_path)
+        clf2 = degron_pred.load_classifier(clf2_path)
+        #clf1 = degron_pred.load_classifier('data/logistic_regression_pos_specific_dinuc_v2.pickle')
+        #clf2 = degron_pred.load_classifier('data/logistic_regression_bag_of_words_v2.pickle')
 
     # iterate over each gene in the MAF file
     output_list = []
@@ -262,7 +270,7 @@ def main(opts):
     elif opts['sites']:
         output_df = utils.process_ub_results(results)
     else:
-        output_df = utils.process_lysine_results(results)
+        output_df = utils.process_cterm_degron_results(results)
 
     # save the results
     output_df.to_csv(opts['output'], sep='\t', index=False)
