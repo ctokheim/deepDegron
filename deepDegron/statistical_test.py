@@ -119,8 +119,6 @@ def analyze(opts, chrom=None, analysis='degrons'):
         clf1_path, clf2_path = opts['cterm_models'].split(',')
         clf1 = degron_pred.load_classifier(clf1_path)
         clf2 = degron_pred.load_classifier(clf2_path)
-        #clf1 = degron_pred.load_classifier('data/logistic_regression_pos_specific_dinuc_v2.pickle')
-        #clf2 = degron_pred.load_classifier('data/logistic_regression_bag_of_words_v2.pickle')
 
     # iterate over each gene in the MAF file
     output_list = []
@@ -157,107 +155,6 @@ def analyze(opts, chrom=None, analysis='degrons'):
             output_list.append([gene]+list(results))
 
     return output_list
-    """
-    mycols = ['gene', 'num_degrons_mut', 'pval']
-    output_df = pd.DataFrame(output_list, columns=mycols)
-
-    import IPython ; IPython.embed()
-    raise
-
-    mycols = ['gene', 'new_lys', 'new_lys_pval', 'lost_lys', 'lost_lys_pval']
-    output_df = pd.DataFrame(output_list, columns=mycols)
-
-    import IPython ; IPython.embed()
-    raise
-    """
-
-    """
-    ####################
-    # Look into indels
-    ####################
-    var_indel = [x for x in variant_list
-                 if x.__class__ in utils.indels
-                 and x.variant.is_indel]
-    dna_change_indel = [[v.variant.contig, v.variant.start, v.variant.ref, v.variant.alt]
-                        for v in var_indel]
-
-    # there is no sequence context for indels
-    sc_indel = sc.SequenceContext(gata3_tx, 0)
-
-    tmp_input = [('None', len(var_indel))]
-    random_indel = sc_indel.random_pos(tmp_input, 10000)
-
-    sim_delta_deg_list = []
-    tmp_mut_pos = np.hstack(abs_pos for ctxt, cds_pos, abs_pos in random_indel)
-    for sim_pos in tmp_mut_pos:
-        # get variant effects for simulated mutations
-        sim_variant_indels = get_mutation_info(sim_pos, gata3_tx, dna_change_indel)
-
-        # predict whether mutation will be sensitive to NMD by rule of thumb
-        sim_nmd_sensitivity = utils.nmd(sim_variant_indels, gata3_tx)
-
-        # prepare df
-        cterm_seq = [v.mutant_protein_sequence[-23:]+'*'
-                     if v.mutant_protein_sequence
-                     else 'A'*23+'*'
-                     for v in sim_variant_indels]
-        sim_result_df = pd.DataFrame({'seq': cterm_seq, 'nmd': sim_nmd_sensitivity})
-
-        # create feature matrix
-        X = degron_pred.binned_bag_of_words(sim_result_df['seq'], 23, dinuc=True)
-        X2 = degron_pred.binned_bag_of_words(sim_result_df['seq'], 1)
-        sim_result_df['prob'] = clf.predict_proba(X)[:, 1]
-        sim_result_df['prob2'] = clf2.predict_proba(X2)[:, 1]
-        sim_result_df['delta prob'] = sim_result_df['prob'] - sim_result_df['prob2']
-
-        # now compute the test statistic of interest
-        #sim_delta_deg = (sim_result_df.loc[sim_result_df['nmd']==0, 'prob']-0.7859).sum()
-        sim_delta_deg = (sim_result_df.loc[sim_result_df['nmd']==0, 'delta prob']-0.32).sum()
-        sim_delta_deg_list.append(sim_delta_deg)
-
-
-    # look at score distribution for actually observed frameshifts
-    nmd_sensitivity = utils.nmd(var_indel, gata3_tx)
-    cterm_seq = [v.mutant_protein_sequence[-23:]+'*'
-                 if v.mutant_protein_sequence
-                 else 'A'*23+'*'
-                 for v in var_indel]
-    result_df = pd.DataFrame({'seq': cterm_seq, 'nmd': nmd_sensitivity})
-
-    # create feature matrix
-    X = degron_pred.binned_bag_of_words(result_df['seq'], 23, dinuc=True)
-    X2 = degron_pred.binned_bag_of_words(result_df['seq'], 1)
-    result_df['prob'] = clf.predict_proba(X)[:, 1]
-    result_df['prob2'] = clf2.predict_proba(X2)[:, 1]
-    result_df['delta prob'] = result_df['prob'] - result_df['prob2']
-
-    # now compute the test statistic of interest
-    #delta_deg = (result_df.loc[result_df['nmd']==0, 'prob']-0.7859).sum()
-    delta_deg = (result_df.loc[result_df['nmd']==0, 'delta prob']-0.32).sum()
-
-    import IPython ; IPython.embed()
-    raise
-
-
-    #sim_variant_indels = []
-    #for i in range(len(sim1)):
-        #contig, start, ref, alt = dna_change_indel[i]
-        #new_pos = sim1[i]
-
-        # figure out the new reference seq
-        # for deletions
-        #len_del = len(ref)
-        #if len_del:
-            #tmp_offset_pos = gata3_tx.spliced_offset(int(new_pos)) - start_offset
-            #new_ref = gata3_tx.coding_sequence[tmp_offset_pos:tmp_offset_pos+len_del]
-
-        #new_var_info = [contig, new_pos, new_ref, alt]
-        #sim_variant_indels.append(read_variant(new_var_info, gata3_tx))
-
-    #Variant(contig=7, start=140453136, ref="A", alt="T", ensembl=ensembl_grch37)
-
-    import IPython ; IPython.embed()
-    """
 
 
 def main(opts):
