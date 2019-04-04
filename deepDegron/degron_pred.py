@@ -51,6 +51,26 @@ def binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False):
     return out
 
 
+def compute_feature_matrix(sequences, split, dinuc=False):
+    """Compute the feature matrix"""
+    if 0 < split < 23:
+        X = binned_bag_of_words(sequences.str[-split:],
+                                int(split), n=int(split),
+                                dinuc=dinuc)
+        X2 = binned_bag_of_words(sequences.str[:-split],
+                                 1, n=23-int(split), dinuc=False)
+        X = np.hstack([X2.toarray(), X])
+    elif split == 0:
+        X = binned_bag_of_words(sequences,
+                                int(split), n=int(split),
+                                dinuc=False)
+    elif split == 23:
+        X = binned_bag_of_words(sequences,
+                                int(split), n=int(split),
+                                dinuc=dinuc)
+    return X
+
+
 def load_classifier(file_path):
     with open(file_path, 'rb') as handle:
         clf = pickle.load(handle)
@@ -61,26 +81,14 @@ def delta_prob(variants, tx, clf1, clf2):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
-    #cterm_seq = [v.mutant_protein_sequence[-23:]
-                 #for v in variants
-                 #if v.mutant_protein_sequence and
-                    #((type(v) in utils.indels) or
-                    #((type(v) in utils.base_substitutions) &
-                    #(v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23))))
-                #]
     cterm_seq = []
     for v in variants:
         if v.mutant_protein_sequence:
             if type(v) in utils.indels:
-                #cterm_seq.append(v.mutant_protein_sequence[-23:])
-                pass
+                cterm_seq.append(v.mutant_protein_sequence[-23:])
             elif type(v) in utils.base_substitutions:
-                try:
-                    if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
-                        cterm_seq.append(v.mutant_protein_sequence[-23:])
-                except:
-                    print(v)
-                    raise
+                if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
+                    cterm_seq.append(v.mutant_protein_sequence[-23:])
 
     # return None if no variants
     if not cterm_seq:
@@ -93,22 +101,22 @@ def delta_prob(variants, tx, clf1, clf2):
     result_df = pd.DataFrame({'seq': cterm_seq})
 
     # create feature matrix
-    X = binned_bag_of_words(result_df['seq'], 23, dinuc=True)
-    X2 = binned_bag_of_words(result_df['seq'], 1)
+    X = compute_feature_matrix(result_df['seq'], 6, dinuc=True)
+    X2 = compute_feature_matrix(result_df['seq'], 0, dinuc=False)
 
     # predict scores
-    result_df['prob'] = clf1.predict_proba(X)[:, 1]
-    result_df['prob2'] = clf2.predict_proba(X2)[:, 1]
+    result_df['prob'] = clf1.predict_proba(X)[:, 0]
+    result_df['prob2'] = clf2.predict_proba(X2)[:, 0]
     result_df['delta prob'] = result_df['prob'] - result_df['prob2']
 
     # adjust for baseline score
     wt_seq = tx.protein_sequence[-23:]
     wt_df = pd.DataFrame({'seq': [wt_seq]})
     # create feature matrix
-    X = binned_bag_of_words(wt_df['seq'], 23, dinuc=True)
-    X2 = binned_bag_of_words(wt_df['seq'], 1)
-    wt_df['prob'] = clf1.predict_proba(X)[:, 1]
-    wt_df['prob2'] = clf2.predict_proba(X2)[:, 1]
+    X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True)
+    X2 = compute_feature_matrix(wt_df['seq'], 0, dinuc=False)
+    wt_df['prob'] = clf1.predict_proba(X)[:, 0]
+    wt_df['prob2'] = clf2.predict_proba(X2)[:, 0]
     wt_df['delta prob'] = wt_df['prob'] - wt_df['prob2']
     baseline = wt_df['delta prob'].iloc[0]
 
