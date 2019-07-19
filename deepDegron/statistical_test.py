@@ -19,9 +19,13 @@ from variants import *
 import simulation
 import pvalue
 
+import os
+os.environ['OMP_NUM_THREADS'] = "1"
+
 # logging import
 import logging
 logger = logging.getLogger(__name__)  # module logger
+logging.getLogger('varcode').setLevel(logging.ERROR)
 # multiprocess
 from multiprocessing import Pool
 

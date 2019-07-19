@@ -1,5 +1,5 @@
 """
-File: train.py
+File: train_cterm_nn.py
 Author: Collin Tokheim
 Email: ctokheim@mail.dfci.harvard.edu
 Github: ctokheim
@@ -19,7 +19,6 @@ from keras.optimizers import Adam
 from keras import backend as K
 import numpy as np
 from sklearn.utils import class_weight
-
 
 
 def parse_arguments():
@@ -97,36 +96,39 @@ def main(opts):
     # setup feature matrix for sequence specific
     #######################
     split_vals = [6, 12, 18, 23]
-    dropout_list = [0.3, 0.5, 0.7]
-    sizes = [16, 32]
-    dinucs = [True] #[True, False]
-    performance = [['split', 'dropout', 'size', 'dinuc', 'auc']]
+    dropout_list = [0, 0.25, 0.5, 0.75]
+    sizes = [8, 16, 32]
+    layers = [2]
+    dinucs = [True, False] #[True, False]
+    performance = [['split', 'dropout', 'size', 'layers', 'dinuc', 'auc']]
 
     for split in split_vals:
-        for dinuc in dinucs:
-            # sequence-specific training
-            X = compute_feature_matrix(feature_df['Peptide amino acid sequence'],
-                                       split=split, dinuc=dinuc)
+        for layer in layers:
+            for dinuc in dinucs:
+                # sequence-specific training
+                X = compute_feature_matrix(feature_df['Peptide amino acid sequence'],
+                                           split=split, dinuc=dinuc)
 
-            # Train / test split
-            X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                                train_size=0.7,
-                                                                test_size=0.3,
-                                                                random_state=101,
-                                                                shuffle=True)
-            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
-                                                              train_size=0.7,
-                                                              test_size=0.3,
-                                                              random_state=101,
-                                                              shuffle=True)
+                # Train / test split
+                X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                                    train_size=0.7,
+                                                                    test_size=0.3,
+                                                                    random_state=101,
+                                                                    shuffle=True)
+                X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
+                                                                  train_size=0.7,
+                                                                  test_size=0.3,
+                                                                  random_state=101,
+                                                                  shuffle=True)
 
-            # iterate through deep learning params
-            for dropout in dropout_list:
-                for size in sizes:
-                    model = train_ff_nn(X_train, y_train, size=size, dropout=dropout)
-                    prob_val = model.predict_proba(X_val)[:,0]
-                    score = metrics.roc_auc_score(y_val, prob_val)
-                    performance.append([split, dropout, size, dinuc, score])
+                # iterate through deep learning params
+                for dropout in dropout_list:
+                    for size in sizes:
+                        model = degron_pred.train_ff_nn(X_train, y_train, layers=layer,
+                                                        size=size, dropout=dropout)
+                        prob_val = model.predict_proba(X_val)[:,0]
+                        score = metrics.roc_auc_score(y_val, prob_val)
+                        performance.append([split, dropout, size, layer, dinuc, score])
 
     # compile performance metrics
     performance_df = pd.DataFrame(performance[1:], columns=performance[0])
@@ -140,6 +142,7 @@ def main(opts):
     best_dropout = top_params['dropout']
     best_dinuc = top_params['dinuc']
     best_size = top_params['size']
+    best_layer = top_params['layers']
 
     # train the best model
     X = compute_feature_matrix(feature_df['Peptide amino acid sequence'],
@@ -148,7 +151,8 @@ def main(opts):
                                                         train_size=0.7, test_size=0.3,
                                                         random_state=101,
                                                         shuffle=True)
-    model = train_ff_nn(X_train, y_train, size=best_size, dropout=best_dropout)
+    model = degron_pred.train_ff_nn(X_train, y_train, layers=layer,
+                                    size=best_size, dropout=best_dropout)
 
     # score the test set
     prob_test = model.predict_proba(X_test)[:,0]
@@ -162,18 +166,15 @@ def main(opts):
     # Save models trained on the full data
     #############################
     # sequence specific model
-    clf1 = train_ff_nn(X, y, size=best_size, dropout=best_dropout)
+    clf1 = degron_pred.train_ff_nn(X, y, layers=layer,
+                                   size=best_size, dropout=best_dropout)
     ypred_clf1 = clf1.predict_proba(X)[:,0]
     feature_df['sequence position specific'] = ypred_clf1
-    # get activations of output layer
-    GetLayer = K.function([clf1.input], [clf1.layers[0].output])
-    activation = GetLayer([X])[0]
-    for i in range(activation.shape[1]):
-        feature_df['Activation{0}'.format(i+1)] = activation[:,i]
     # bag of words
     X = compute_feature_matrix(feature_df['Peptide amino acid sequence'],
                                split=0, dinuc=False)
-    clf2 = train_ff_nn(X, y, size=best_size, dropout=best_dropout)
+    clf2 = degron_pred.train_ff_nn(X, y, layers=layer,
+                                   size=best_size, dropout=best_dropout)
     ypred_clf2 = clf2.predict_proba(X)[:,0]
     feature_df['bag of words'] = ypred_clf2
     feature_df['regulatory potential'] = feature_df['sequence position specific'] - feature_df['bag of words']
@@ -184,9 +185,6 @@ def main(opts):
         pickle.dump(clf2, handle)
     # save scores
     feature_df.to_csv(opts['output'], sep='\t', index=False)
-
-    import IPython ; IPython.embed()
-    raise
 
 
 

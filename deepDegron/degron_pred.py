@@ -6,6 +6,19 @@ from sklearn.linear_model import LogisticRegression
 import pickle
 import utils
 
+# load keras
+import keras
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.optimizers import Adam
+from keras import backend as K
+#K.set_session(
+    #K.tf.Session(config=K.tf.ConfigProto(intra_op_parallelism_threads=1,
+                                         #inter_op_parallelism_threads=2,
+                                         #allow_soft_placement=True,
+                                         #device_count = {'CPU': 1}))
+#)
+
 vocab = ['A', 'R', 'N', 'D', 'C',
          'E', 'Q', 'G', 'H', 'I',
          'L', 'K', 'M', 'F', 'P',
@@ -27,7 +40,34 @@ def kmer_count(seq):
     return output_list
 
 
-def binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False):
+def binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False, cterm=True):
+    """This function performs bag of words on separate substrings"""
+    # split up the bag of words into separate bins
+    if splits > 1:
+        chunk_size = round(n/splits)
+        xlist = []
+        for j in range(splits):
+            if j == (splits-1):
+                tmp_x = vectorizer.transform(pep_sequence.str[:-j*chunk_size])
+            else:
+                tmp_x = vectorizer.transform(pep_sequence.str[-(j+1)*chunk_size:-j*chunk_size])
+            xlist.append(tmp_x.toarray())
+        out = np.concatenate(xlist, axis=1)
+    else:
+        out = vectorizer.transform(pep_sequence)
+
+    # add c-terminal dinucleotides
+    if dinuc:
+        if cterm:
+            tmp = np.vstack(pep_sequence.str[-2:].apply(kmer_count).values)
+        else:
+            tmp = np.vstack(pep_sequence.str[:2].apply(kmer_count).values)
+        out = np.concatenate([out, tmp], axis=1)
+
+    return out
+
+
+def nterm_binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False):
     """This function performs bag of words on separate substrings"""
     # split up the bag of words into separate bins
     if splits > 1:
@@ -69,6 +109,27 @@ def compute_feature_matrix(sequences, split, dinuc=False):
                                 int(split), n=int(split),
                                 dinuc=dinuc)
     return X
+
+
+def train_ff_nn(features, y, size=32, dropout=0.5, layers=2, lr=0.001):
+    """Train feed-forward neural network model."""
+    # compile model
+    features_shape = features.shape
+    model = Sequential()
+    model.add(Dense(units=size, activation='relu', input_dim=features_shape[1]))
+    if dropout != 0:
+        model.add(Dropout(dropout))
+    for i in range(layers-1):
+        model.add(Dense(units=size, activation='relu'))
+    model.add(Dense(units=1, activation='sigmoid'))
+    model.compile(optimizer=Adam(lr=lr),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+
+    # fit model
+    model.fit(features, y.values,
+              epochs=40, batch_size=128)
+    return model
 
 
 def load_classifier(file_path):
