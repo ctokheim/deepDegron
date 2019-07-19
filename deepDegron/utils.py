@@ -21,6 +21,7 @@ base_substitutions = [varcode.effects.Substitution, varcode.effects.Silent,
                       varcode.effects.AlternateStartCodon, varcode.effects.PrematureStop,
                       varcode.effects.StartLoss, varcode.effects.StopLoss]
 indels = [varcode.effects.Deletion, varcode.effects.Insertion, varcode.effects.FrameShift]
+nmd_sub_vars = [varcode.effects.PrematureStop]
 
 def rev_comp(seq):
     """Get reverse complement of sequence.
@@ -73,6 +74,20 @@ def nmd(variant_list, tx, drop=False):
                 nmd_sensitive_list.append(1)
 
     return nmd_sensitive_list
+
+def filter_nmd_subs(var_list, tx):
+    """Wrapper function to filter out nonsense mutations which cause NMD from a
+    mixture of base substitution mutations. """
+    # separate out nonsense mutations
+    var_nonsense = [x for x in var_list
+                    if x.__class__ in nmd_sub_vars]
+    var_other = [x for x in var_list
+                 if x.__class__ not in nmd_sub_vars]
+
+    # drop nonsense mutations which cause nmd
+    var_nonsense = nmd(var_nonsense, tx, drop=True)
+
+    return var_other+var_nonsense
 
 
 def keyboard_exit_wrapper(func):

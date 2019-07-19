@@ -192,6 +192,7 @@ def cterm_degron(variant_list,
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
 
     # filter for indel variants
     var_indel = [x for x in variant_list
@@ -206,7 +207,7 @@ def cterm_degron(variant_list,
         return None
 
     # figure out the affect on cterminal degrons
-    delta_prob = degron_pred.delta_prob(var_sub+var_indel, tx, clf1, clf2)
+    delta_prob = degron_pred.delta_prob(var_sub_no_nmd+var_indel, tx, clf1, clf2)
 
     # skip if no c-terminal variants
     if not delta_prob:
@@ -232,10 +233,12 @@ def cterm_degron(variant_list,
     delta_prob_ct, iter_sim = 0, 0
     for i in range(num_simulations):
         # get info for substitutions
-        if var_sub:
+        if var_sub_other or var_nonsense:
             sim_pos = tmp_mut_pos[i, :]
             sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
             num_sim_subs = len(sim_variant_subs)
+            # filter based on nmd
+            sim_variant_subs = utils.filter_nmd_subs(sim_variant_subs, tx)
         else:
             num_sim_subs = 0
             sim_variant_subs = []

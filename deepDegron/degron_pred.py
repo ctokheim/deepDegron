@@ -145,7 +145,7 @@ def delta_prob(variants, tx, clf1, clf2):
     cterm_seq = []
     for v in variants:
         if v.mutant_protein_sequence:
-            if type(v) in utils.indels:
+            if type(v) in utils.indels+utils.nmd_sub_vars:
                 cterm_seq.append(v.mutant_protein_sequence[-23:])
             elif type(v) in utils.base_substitutions:
                 if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
