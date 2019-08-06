@@ -46,27 +46,6 @@ def parse_arguments():
     return vars(args)
 
 
-def train_ff_nn(features, y, size=32, dropout=0.5, layers=2, lr=0.001):
-    """Train feed-forward neural network model."""
-    # compile model
-    features_shape = features.shape
-    model = Sequential()
-    model.add(Dense(units=size, activation='relu', input_dim=features_shape[1]))
-    if dropout != 0:
-        model.add(Dropout(dropout))
-    for i in range(layers-1):
-        model.add(Dense(units=size, activation='relu'))
-    model.add(Dense(units=1, activation='sigmoid'))
-    model.compile(optimizer=Adam(lr=lr),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-
-    # fit model
-    model.fit(features, y.values,
-              epochs=40, batch_size=128)
-    return model
-
-
 def compute_nterm_feature_matrix(sequences, split, dinuc=False):
     """Compute the feature matrix"""
     if 0 < split < 23:
@@ -101,11 +80,12 @@ def main(opts):
     # setup feature matrix for sequence specific
     #######################
     split_vals = [6, 12, 18, 23]
-    dropout_list = [0, 0.25, 0.5, 0.75]
+    dropout_list = [0, 0.25, 0.5]
     layers = [2]
-    sizes = [8, 16, 32]
-    dinucs = [True, False] #[True, False]
-    performance = [['split', 'dropout', 'size', 'layers', 'dinuc', 'auc']]
+    epochs = [20, 40, 60]
+    sizes = [8, 16]
+    dinucs = [True, False]
+    performance = [['split', 'dropout', 'size', 'epochs', 'layers', 'dinuc', 'auc']]
 
     for split in split_vals:
         for layer in layers:
@@ -129,11 +109,13 @@ def main(opts):
                 # iterate through deep learning params
                 for dropout in dropout_list:
                     for size in sizes:
-                        model = degron_pred.train_ff_nn(X_train, y_train, size=size,
-                                                        layers=layer, dropout=dropout)
-                        prob_val = model.predict_proba(X_val)[:,0]
-                        score = metrics.roc_auc_score(y_val, prob_val)
-                        performance.append([split, dropout, size, layer, dinuc, score])
+                        for e in epochs:
+                            model = degron_pred.train_ff_nn(X_train, y_train, size=size,
+                                                            layers=layer, dropout=dropout,
+                                                            epochs=e)
+                            prob_val = model.predict_proba(X_val)[:,0]
+                            score = metrics.roc_auc_score(y_val, prob_val)
+                            performance.append([split, dropout, size, e, layer, dinuc, score])
 
     # compile performance metrics
     performance_df = pd.DataFrame(performance[1:], columns=performance[0])
@@ -148,6 +130,7 @@ def main(opts):
     best_dinuc = top_params['dinuc']
     best_size = top_params['size']
     best_layer = top_params['layers']
+    best_epochs = top_params['epochs']
 
     # train the best model
     X = compute_nterm_feature_matrix(feature_df['Peptide amino acid sequence'],
@@ -156,7 +139,8 @@ def main(opts):
                                                         train_size=0.7, test_size=0.3,
                                                         random_state=101,
                                                         shuffle=True)
-    model = degron_pred.train_ff_nn(X_train, y_train, size=best_size, dropout=best_dropout)
+    model = degron_pred.train_ff_nn(X_train, y_train, size=best_size,
+                                    dropout=best_dropout, epochs=best_epochs)
 
     # score the test set
     prob_test = model.predict_proba(X_test)[:,0]
@@ -170,13 +154,15 @@ def main(opts):
     # Save models trained on the full data
     #############################
     # sequence specific model
-    clf1 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout, layers=best_layer)
+    clf1 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout,
+                                   layers=best_layer, epochs=best_epochs)
     ypred_clf1 = clf1.predict_proba(X)[:,0]
     feature_df['sequence position specific'] = ypred_clf1
     # bag of words
     X = compute_nterm_feature_matrix(feature_df['Peptide amino acid sequence'],
                                      split=0, dinuc=False)
-    clf2 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout, layers=best_layer)
+    clf2 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout,
+                                   layers=best_layer, epochs=best_epochs)
     ypred_clf2 = clf2.predict_proba(X)[:,0]
     feature_df['bag of words'] = ypred_clf2
     feature_df['regulatory potential'] = feature_df['sequence position specific'] - feature_df['bag of words']

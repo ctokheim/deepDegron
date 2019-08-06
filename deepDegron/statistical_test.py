@@ -26,6 +26,10 @@ os.environ['OMP_NUM_THREADS'] = "1"
 import logging
 logger = logging.getLogger(__name__)  # module logger
 logging.getLogger('varcode').setLevel(logging.ERROR)
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+logging.getLogger('Bio').setLevel(logging.ERROR)
+import warnings
+warnings.filterwarnings("ignore")
 # multiprocess
 from multiprocessing import Pool
 

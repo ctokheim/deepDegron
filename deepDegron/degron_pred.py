@@ -12,6 +12,15 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
 from keras import backend as K
+
+# ignore warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+# don't log deprecation warnings
+import logging
+logger = logging.getLogger(__name__)  # module logger
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
 #K.set_session(
     #K.tf.Session(config=K.tf.ConfigProto(intra_op_parallelism_threads=1,
                                          #inter_op_parallelism_threads=2,
@@ -111,7 +120,7 @@ def compute_feature_matrix(sequences, split, dinuc=False):
     return X
 
 
-def train_ff_nn(features, y, size=32, dropout=0.5, layers=2, lr=0.001):
+def train_ff_nn(features, y, size=32, dropout=0.5, layers=2, lr=0.001, epochs=40):
     """Train feed-forward neural network model."""
     # compile model
     features_shape = features.shape
@@ -128,7 +137,7 @@ def train_ff_nn(features, y, size=32, dropout=0.5, layers=2, lr=0.001):
 
     # fit model
     model.fit(features, y.values,
-              epochs=40, batch_size=128)
+              epochs=epochs, batch_size=128)
     return model
 
 

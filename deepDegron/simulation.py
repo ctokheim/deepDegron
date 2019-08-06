@@ -184,13 +184,14 @@ def site(variant_list,
 
 def cterm_degron(variant_list,
                  tx, clf1, clf2,
-                 nuc_context=3,
-                 num_simulations=10000):
+                 nuc_context=1.5,
+                 num_simulations=1000):
     """Simulate the affect of mutations on c-terminal degrons.
 
     """
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
     var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
 
@@ -233,7 +234,7 @@ def cterm_degron(variant_list,
     delta_prob_ct, iter_sim = 0, 0
     for i in range(num_simulations):
         # get info for substitutions
-        if var_sub_other or var_nonsense:
+        if var_sub_no_nmd:
             sim_pos = tmp_mut_pos[i, :]
             sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
             num_sim_subs = len(sim_variant_subs)
