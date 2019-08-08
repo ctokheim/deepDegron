@@ -75,6 +75,7 @@ def nmd(variant_list, tx, drop=False):
 
     return nmd_sensitive_list
 
+
 def filter_nmd_subs(var_list, tx):
     """Wrapper function to filter out nonsense mutations which cause NMD from a
     mixture of base substitution mutations. """
@@ -159,19 +160,9 @@ def process_ub_results(output_list):
     return output_df
 
 
-def process_lysine_results(output_list):
-    """Process the results from the lysine mutation analysis."""
-    mycols = ['gene', 'new_lys_muts', 'new_lys_pvalue',
-              'lost_lys_muts', 'lost_lys_pvalue']
-    output_df = pd.DataFrame(output_list, columns=mycols)
-    output_df['new_lys_qvalue'] = pvalue.bh_fdr(output_df['new_lys_pvalue'])
-    output_df['lost_lys_qvalue'] = pvalue.bh_fdr(output_df['lost_lys_pvalue'])
-    return output_df
-
-
 def process_cterm_degron_results(output_list):
     """Process the results from cterminal degron mutation analysis."""
-    mycols = ['gene', 'delta_reg_potential', 'pvalue']
+    mycols = ['gene', 'delta_degron_potential', 'pvalue']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
