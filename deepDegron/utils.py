@@ -160,10 +160,17 @@ def process_ub_results(output_list):
     return output_df
 
 
-def process_cterm_degron_results(output_list):
+def process_terminal_degron_results(output_list):
     """Process the results from cterminal degron mutation analysis."""
     mycols = ['gene', 'delta_degron_potential', 'pvalue']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
 
+
+def fetch_seq(seq, model='cterm'):
+    """Slices the protein sequence to extract out the n-terminal or c-terminal protein sequence"""
+    if model == 'cterm':
+        return seq[-23:]
+    else:
+        return seq[1:24]

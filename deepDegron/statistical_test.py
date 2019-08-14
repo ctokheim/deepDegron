@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore")
 from multiprocessing import Pool
 
 def parse_arguments():
-    info = 'Statistical test'
+    info = 'Evaluates the enrichment of degron-disrupting mutations'
     parser = argparse.ArgumentParser(description=info)
     parser.add_argument('-i', '--input',
                         type=str, required=True,
@@ -48,6 +48,9 @@ def parse_arguments():
     parser.add_argument('-c', '--cterm-models',
                         type=str, default=None,
                         help='Path to saved cterminal degron models')
+    parser.add_argument('-n', '--nterm-models',
+                        type=str, default=None,
+                        help='Path to saved nterminal degron models')
     parser.add_argument('-f', '--flank',
                         type=int, default=0,
                         help='Number of flanking residues to consider')
@@ -108,8 +111,10 @@ def singleprocess_permutation(info):
         analysis_type = 'sites'
     elif options['cterm_models']:
         analysis_type = 'cterminus'
+    elif options['nterm_models']:
+        analysis_type = 'nterminus'
     else:
-        analysis_type = 'lysine'
+        analysis_type = 'sites'
     return analyze(opts, chrom=mychr, analysis=analysis_type)
 
 
@@ -125,6 +130,11 @@ def analyze(opts, chrom=None, analysis='degrons'):
     # read the c-terminus classifier
     if analysis == 'cterminus':
         clf1_path, clf2_path = opts['cterm_models'].split(',')
+        clf1 = degron_pred.load_classifier(clf1_path)
+        clf2 = degron_pred.load_classifier(clf2_path)
+    # read the n-terminus classifier
+    if analysis == 'nterminus':
+        clf1_path, clf2_path = opts['nterm_models'].split(',')
         clf1 = degron_pred.load_classifier(clf1_path)
         clf2 = degron_pred.load_classifier(clf2_path)
 
@@ -152,11 +162,11 @@ def analyze(opts, chrom=None, analysis='degrons'):
         if analysis == 'degrons':
             results = simulation.degron(variant_list, tx, degron_intvls[gene])
         elif analysis == 'cterminus':
-            results = simulation.cterm_degron(variant_list, tx, clf1, clf2)
+            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='cterm')
+        elif analysis == 'nterminus':
+            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='nterm')
         elif analysis == 'sites':
             results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name])
-        else:
-            results = simulation.lysine_mutations(variant_list, tx)
 
         # append results
         if results:
@@ -174,8 +184,8 @@ def main(opts):
         output_df = utils.process_degron_results(results)
     elif opts['sites']:
         output_df = utils.process_ub_results(results)
-    else:
-        output_df = utils.process_cterm_degron_results(results)
+    elif opts['cterm_models'] or opts['nterm_models']:
+        output_df = utils.process_terminal_degron_results(results)
 
     # save the results
     output_df.to_csv(opts['output'], sep='\t', index=False)

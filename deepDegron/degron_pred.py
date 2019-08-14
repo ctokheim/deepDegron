@@ -44,6 +44,7 @@ def kmer_count(seq):
     kmer_dict = OrderedDict([[aas, 0] for aas in dimers])
     for i in range(len(seq)-1):
         tmp_dimer = seq[i:i+2]
+        if 'U' in tmp_dimer: continue  # skip non-DNA letters
         kmer_dict[tmp_dimer] += 1
     output_list = np.array(list(kmer_dict.values()))
     return output_list
@@ -147,7 +148,7 @@ def load_classifier(file_path):
     return clf
 
 
-def delta_prob(variants, tx, clf1, clf2):
+def delta_prob(variants, tx, clf1, clf2, model='cterm'):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
@@ -155,16 +156,16 @@ def delta_prob(variants, tx, clf1, clf2):
     for v in variants:
         if v.mutant_protein_sequence:
             if type(v) in utils.indels+utils.nmd_sub_vars:
-                cterm_seq.append(v.mutant_protein_sequence[-23:])
+                cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
             elif type(v) in utils.base_substitutions:
                 if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
-                    cterm_seq.append(v.mutant_protein_sequence[-23:])
+                    cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
 
     # return None if no variants
     if not cterm_seq:
         return 0
     # return None if U in protein sequence
-    if 'U' in tx.protein_sequence[-23:]:
+    if 'U' in utils.fetch_seq(tx.protein_sequence, model=model):
         return 0
 
     # construct dataframe
@@ -180,7 +181,7 @@ def delta_prob(variants, tx, clf1, clf2):
     result_df['delta prob'] = result_df['prob'] - result_df['prob2']
 
     # adjust for baseline score
-    wt_seq = tx.protein_sequence[-23:]
+    wt_seq = utils.fetch_seq(tx.protein_sequence, model=model)
     wt_df = pd.DataFrame({'seq': [wt_seq]})
     # create feature matrix
     X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True)
