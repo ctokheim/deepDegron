@@ -213,7 +213,7 @@ def terminal_degron(variant_list,
                     tx, clf1, clf2,
                     model='cterm',
                     nuc_context=1.5,
-                    num_simulations=1000):
+                    num_simulations=10000):
     """Simulate the affect of mutations on n-terminal degrons.
 
     """
