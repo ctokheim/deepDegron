@@ -6,6 +6,11 @@ sys.path.append(os.path.join(file_dir, '../'))
 
 
 def test_ctnnb1_main():
+    # make output directory if it doesn't exist
+    outdir = os.path.join(file_dir, 'output')
+    if not os.path.exists(outdir): os.mkdir(outdir)
+
+    # run ctnnb1 example
     opts = {
         'input': os.path.join(file_dir, 'data/CTNNB1_mutations_ucec.txt'),
         'degrons': None,
