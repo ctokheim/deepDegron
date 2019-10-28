@@ -175,7 +175,11 @@ def main(opts):
     feature_df.to_csv(opts['output'], sep='\t', index=False)
 
 
-if __name__ == '__main__':
+def cli_main():
+    # run main with CLI options
     opts = parse_arguments()
     main(opts)
 
+
+if __name__ == '__main__':
+    cli_main()
