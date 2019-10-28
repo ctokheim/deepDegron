@@ -1,6 +1,7 @@
 numpy
 scipy
 pandas
+sklearn
 pyensembl
 varcode
 tensorflow
