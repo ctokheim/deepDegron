@@ -143,6 +143,7 @@ def nterm_dimotif_enrichment(df, thresh):
 
     return result
 
+
 def nterm_trimotif_enrichment(df, thresh):
     aa_vocab = degron_pred.vocab
     # get background probs for each aa
@@ -192,6 +193,7 @@ def nterm_trimotif_enrichment(df, thresh):
     result.sort_values('pvalue', inplace=True)
 
     return result
+
 
 def cterm_dimotif_enrichment(df, thresh):
     aa_vocab = degron_pred.vocab
@@ -278,6 +280,62 @@ def cterm_trimotif_enrichment(df, thresh):
     return result
 
 
+def cterm_quadmotif_enrichment(df, thresh):
+    aa_vocab = degron_pred.vocab
+    # get background probs for each aa
+    aa_bg = {}
+    #bot_n = len(df)-thresh*2+1
+    bot_n = len(df)
+    for aa in aa_vocab:
+        tmp = df['Peptide amino acid sequence'].apply(motif_count_nopos, args=([aa], 'cterm'))
+        #tmp_prob = (tmp.iloc[thresh:-thresh].sum() + 1) / (bot_n*6)
+        tmp_prob = (tmp.sum()) / (bot_n*6)
+        aa_bg[aa] = tmp_prob
+
+    output_list = []
+    for aa1 in aa_vocab:
+        for aa2 in aa_vocab:
+            for aa3 in aa_vocab:
+                for aa4 in aa_vocab:
+                    pattern = ''.join([aa1, aa2, aa3, aa4])
+                    # figure out full count
+                    testing = df['Peptide amino acid sequence'].apply(motif_count_nopos, args=([pattern], 'cterm'))
+                    top_ct = testing.iloc[:thresh].sum()
+                    top_n = thresh * 3
+                    # get baseline prob
+                    bottom_prob_1 = aa_bg[pattern[0]]
+                    tmp = df['Peptide amino acid sequence'].apply(motif_count_nopos, args=([pattern[:2]], 'cterm'))
+                    bottom_prob_2_di = (tmp.sum()) / (bot_n*5)
+                    bottom_prob_2 = bottom_prob_2_di / bottom_prob_1
+                    bottom_prob_2_aa = aa_bg[pattern[1]]
+                    tmp = df['Peptide amino acid sequence'].apply(motif_count_nopos, args=([pattern[1:3]], 'cterm'))
+                    bottom_prob_3_di = (tmp.sum()) / (bot_n*5)
+                    bottom_prob_3 = bottom_prob_3_di / bottom_prob_2_aa
+                    bottom_prob_3_aa = aa_bg[pattern[2]]
+                    tmp = df['Peptide amino acid sequence'].apply(motif_count_nopos, args=([pattern[2:4]], 'cterm'))
+                    bottom_prob_4_di = (tmp.sum()) / (bot_n*5)
+                    bottom_prob_4 = bottom_prob_4_di / bottom_prob_3_aa
+
+                    # calc background p
+                    bottom_prob = bottom_prob_1 * bottom_prob_2 * bottom_prob_3 * bottom_prob_4
+
+                    # measure significance
+                    pval = stats.binom_test(top_ct, n=top_n, p=bottom_prob, alternative='greater')
+                    #output_list.append([pattern, top_ct, bottom_prob, thresh, len(testing)-2*thresh, pval])
+                    output_list.append([pattern, top_ct, bottom_prob, thresh, bot_n, pval])
+
+    # compile results
+    mycols = ['motif', 'top ct', 'background p', 'top total', 'bot total', 'pvalue']
+    result = pd.DataFrame(output_list, columns=mycols)
+    result['log(OR)'] = np.log2((result['top ct'] / (result['top total']-result['top ct'])) / (result['background p'] / (1 - result['background p'])))
+    result['adjusted pvalue'] = result['pvalue'] * len(result)
+    result.loc[result['adjusted pvalue']>1, 'adjusted pvalue'] = 1
+    result['qvalue'] = pvalue.bh_fdr(result['pvalue'])
+    result.sort_values('pvalue', inplace=True)
+
+    return result
+
+
 def main(opts):
     # read data
     df = pd.read_csv(opts['input'], sep='\t').rename(columns={'regulatory potential': 'degron potential'})
@@ -299,12 +357,15 @@ def main(opts):
         # analyze enrichment for c-terminal motifs
         di_result = cterm_dimotif_enrichment(df.copy(), thresh)
         tri_result = cterm_trimotif_enrichment(df.copy(), thresh)
+        #quad_result = cterm_quadmotif_enrichment(df.copy(), thresh)
 
     # save results
     di_path = os.path.join(opts['output'], 'dimotif.txt')
     di_result.to_csv(di_path, sep='\t', index=False)
     tri_path = os.path.join(opts['output'], 'trimotif.txt')
     tri_result.to_csv(tri_path, sep='\t', index=False)
+    #quad_path = os.path.join(opts['output'], 'quadmotif.txt')
+    #quad_result.to_csv(quad_path, sep='\t', index=False)
 
 
 if __name__ == '__main__':
