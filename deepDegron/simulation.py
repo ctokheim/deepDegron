@@ -9,9 +9,10 @@ import degron_pred
 def degron(variant_list,
            tx, deg_intervals,
            nuc_context=3,
-           num_simulations=1000):
+           num_simulations=10000):
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    #trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
 
     # return if no substitution
@@ -58,6 +59,7 @@ def site(variant_list,
          num_simulations=10000):
     # interpet variant context
     var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    #trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
     trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
 
     # return if no substitution
