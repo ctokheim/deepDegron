@@ -1,10 +1,10 @@
 import varcode
-import sequence_context as sc
+import deepDegron.sequence_context as sc
 import collections
 import numpy as np
-import variants
-import utils
-import degron_pred
+import deepDegron.variants as variants
+import deepDegron.utils as utils
+import deepDegron.degron_pred as degron_pred
 
 def degron(variant_list,
            tx, deg_intervals,

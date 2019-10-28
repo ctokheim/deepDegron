@@ -3,7 +3,7 @@ from varcode.effects import *
 from pyensembl import ensembl_grch37, EnsemblRelease
 import csv
 import itertools as it
-import utils
+import deepDegron.utils as utils
 
 def read_variant(var_info, tx):
     """Annotate a variant on a specific transcript."""

@@ -1,5 +1,5 @@
 import numpy as np
-import utils
+import deepDegron.utils as utils
 
 def cds_pos_to_genome(tx):
     """Creates a dictionary that maps CDS position to genome location.

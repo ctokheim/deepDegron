@@ -10,14 +10,14 @@ import pandas as pd
 import numpy as np
 import varcode
 from pyensembl import ensembl_grch37, EnsemblRelease
-import sequence_context as sc
+import deepDegron.sequence_context as sc
 from varcode.effects import *
 import collections
-import utils
-import degron_pred
-from variants import *
-import simulation
-import pvalue
+import deepDegron.utils as utils
+import deepDegron.degron_pred as degron_pred
+from deepDegron.variants import *
+import deepDegron.simulation as simulation
+import deepDegron.pvalue as pvalue
 
 import os
 os.environ['OMP_NUM_THREADS'] = "1"
