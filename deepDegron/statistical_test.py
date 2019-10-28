@@ -95,16 +95,14 @@ def multiprocess_permutation(opts):
             pool.close()
             pool.join()
     else:
-        #analysis_type = 'degrons' if opts['degrons'] else 'lysine'
-        analysis_type = 'cterminus'
+        analysis_type = check_analysis_type(opts)
         result_list += analyze(opts, analysis=analysis_type)
 
     return result_list
 
 
-def singleprocess_permutation(info):
-    """Unpacks the multiprocess input"""
-    options, mychr = info
+def check_analysis_type(options):
+    """Determines what type of analysis to do based on the command line options."""
     if options['degrons']:
         analysis_type = 'degrons'
     elif options['sites']:
@@ -115,6 +113,13 @@ def singleprocess_permutation(info):
         analysis_type = 'nterminus'
     else:
         analysis_type = 'sites'
+    return analysis_type
+
+
+def singleprocess_permutation(info):
+    """Unpacks the multiprocess input"""
+    options, mychr = info
+    analysis_type = check_analysis_type(options)
     return analyze(opts, chrom=mychr, analysis=analysis_type)
 
 
