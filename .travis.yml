@@ -17,5 +17,5 @@ install:
 - source activate test-environment
 - pip install pyensembl
 - pip install varcode
-- pyensembl install --release 75 76 --species human
+- pyensembl install --release 75 --species human
 script: nosetests --nologcapture tests/
