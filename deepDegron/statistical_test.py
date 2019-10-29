@@ -5,6 +5,13 @@ Email: ctokheim@mail.dfci.harvard.edu
 Github: ctokheim
 Description: Build null distribution
 """
+# fix problems with pythons terrible import system
+import sys
+import os
+file_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(file_dir, '../'))
+os.environ['OMP_NUM_THREADS'] = "1"
+
 import argparse
 import pandas as pd
 import numpy as np
@@ -18,9 +25,6 @@ import deepDegron.degron_pred as degron_pred
 from deepDegron.variants import *
 import deepDegron.simulation as simulation
 import deepDegron.pvalue as pvalue
-
-import os
-os.environ['OMP_NUM_THREADS'] = "1"
 
 # logging import
 import logging
@@ -120,7 +124,7 @@ def singleprocess_permutation(info):
     """Unpacks the multiprocess input"""
     options, mychr = info
     analysis_type = check_analysis_type(options)
-    return analyze(opts, chrom=mychr, analysis=analysis_type)
+    return analyze(options, chrom=mychr, analysis=analysis_type)
 
 
 def analyze(opts, chrom=None, analysis='degrons'):

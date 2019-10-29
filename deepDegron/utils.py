@@ -1,7 +1,7 @@
 import varcode
 import csv
-import deepDegron.variants as variants
-import deepDegron.pvalue as pvalue
+from deepDegron import variants
+from deepDegron import pvalue
 import pandas as pd
 
 base_pairing = {'A': 'T',
