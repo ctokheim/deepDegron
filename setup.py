@@ -25,7 +25,7 @@ setup(name='deepDegron',
         url=URL,
         packages=PACKAGES,
         license='Apache License, Version 2.0',
-        install_requires=['numpy', 'scipy', 'pandas', 'pysam'],
+        install_requires=['numpy', 'scipy', 'pandas', 'sklearn', 'pyensembl', 'varcode', 'tensorflow', 'keras'],
         package_data={
         },
         entry_points={
