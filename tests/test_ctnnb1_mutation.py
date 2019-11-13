@@ -16,11 +16,10 @@ def test_ctnnb1_main():
         'degrons': None,
         'sites': os.path.join(file_dir, 'data/ctnnb1_phosphodegron_sites.txt'),
         'flank': 3,
+        'num_sim': 100,
         'processes': 0,
         'cterm_models': None,
         'nterm_models': None,
         'output': os.path.join(file_dir, 'output/ctnnb1_phospho_results.txt')
     }
     test.main(opts)
-
-    assert 1==1

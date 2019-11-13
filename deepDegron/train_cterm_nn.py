@@ -7,7 +7,7 @@ Description: Train c-terminal degron model
 """
 import pandas as pd
 import argparse
-import deepDegron.degron_pred as degron_pred
+from deepDegron import degron_pred
 from sklearn.model_selection import train_test_split
 import sklearn.metrics as metrics
 from sklearn.linear_model import LogisticRegression

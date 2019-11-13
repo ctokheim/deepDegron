@@ -3,7 +3,7 @@ File: statistical_test.py
 Author: Collin Tokheim
 Email: ctokheim@mail.dfci.harvard.edu
 Github: ctokheim
-Description: Build null distribution
+Description: Perform a statistical test of whether there is enrichment of mutations at degrons
 """
 # fix problems with pythons terrible import system
 import sys
@@ -38,7 +38,7 @@ warnings.filterwarnings("ignore")
 from multiprocessing import Pool
 
 def parse_arguments():
-    info = 'Evaluates the enrichment of degron-disrupting mutations'
+    info = 'Performs a statistical test for the enrichment of mutations at degrons'
     parser = argparse.ArgumentParser(description=info)
     parser.add_argument('-i', '--input',
                         type=str, required=True,
@@ -58,6 +58,9 @@ def parse_arguments():
     parser.add_argument('-f', '--flank',
                         type=int, default=0,
                         help='Number of flanking residues to consider')
+    parser.add_argument('-ns', '--num-sim',
+                        type=int, default=10000,
+                        help='Number of simulations in statistical test')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
                         help='Number of processes')
@@ -169,13 +172,13 @@ def analyze(opts, chrom=None, analysis='degrons'):
 
         # calculate the significance
         if analysis == 'degrons':
-            results = simulation.degron(variant_list, tx, degron_intvls[gene])
+            results = simulation.degron(variant_list, tx, degron_intvls[gene], num_simulations=opts['num_sim'])
         elif analysis == 'cterminus':
-            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='cterm')
+            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='cterm', num_simulations=opts['num_sim'])
         elif analysis == 'nterminus':
-            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='nterm')
+            results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='nterm', num_simulations=opts['num_sim'])
         elif analysis == 'sites':
-            results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name])
+            results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name], num_simulations=opts['num_sim'])
 
         # append results
         if results:

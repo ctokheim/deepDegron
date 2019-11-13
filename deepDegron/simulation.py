@@ -216,7 +216,7 @@ def terminal_degron(variant_list,
                     model='cterm',
                     nuc_context=1.5,
                     num_simulations=10000):
-    """Simulate the affect of mutations on n-terminal degrons.
+    """Simulate the effect of mutations on terminal degrons. Handles both c-terminal and and n-terminal degrons.
 
     """
     # interpet variant context
