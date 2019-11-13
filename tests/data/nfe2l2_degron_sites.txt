@@ -1,0 +1,3 @@
+gene	start	end
+NFE2L2	26	32
+NFE2L2	77	82
