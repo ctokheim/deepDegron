@@ -7,7 +7,7 @@ Description: Train c-terminal degron model
 """
 import pandas as pd
 import argparse
-import degron_pred
+import deepDegron.degron_pred as degron_pred
 from sklearn.model_selection import train_test_split
 import sklearn.metrics as metrics
 from sklearn.linear_model import LogisticRegression
@@ -44,25 +44,6 @@ def parse_arguments():
                         help='Predictions for every sequence')
     args = parser.parse_args()
     return vars(args)
-
-
-def train_ff_nn(features, y, size=32, dropout=0.5, lr=0.001):
-    """Train feed-forward neural network model."""
-    # compile model
-    features_shape = features.shape
-    model = Sequential()
-    model.add(Dense(units=size, activation='relu', input_dim=features_shape[1]))
-    model.add(Dropout(dropout))
-    model.add(Dense(units=size, activation='relu'))
-    model.add(Dense(units=1, activation='sigmoid'))
-    model.compile(optimizer=Adam(lr=lr),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-
-    # fit model
-    model.fit(features, y.values,
-              epochs=40, batch_size=128)
-    return model
 
 
 def compute_feature_matrix(sequences, split, dinuc=False):
