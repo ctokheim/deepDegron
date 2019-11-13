@@ -12,7 +12,7 @@ def test_nfe2l2_main():
 
     # run nfe2l2 example
     opts = {
-        'input': os.path.join(file_dir, 'data/NFE2l2_mutations_lusc.txt'),
+        'input': os.path.join(file_dir, 'data/NFE2L2_mutations_lusc.txt'),
         'degrons': os.path.join(file_dir, 'data/nfe2l2_degron_sites.txt'),
         'sites': None,
         'flank': 0,
