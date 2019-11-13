@@ -15,7 +15,7 @@ def test_nfe2l2_main():
         'input': os.path.join(file_dir, 'data/NFE2l2_mutations_lusc.txt'),
         'degrons': os.path.join(file_dir, 'data/nfe2l2_degron_sites.txt'),
         'sites': None,
-        'flank': 3,
+        'flank': 0,
         'num_sim': 100,
         'processes': 0,
         'cterm_models': None,
