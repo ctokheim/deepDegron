@@ -10,7 +10,7 @@ def test_nfe2l2_main():
     outdir = os.path.join(file_dir, 'output')
     if not os.path.exists(outdir): os.mkdir(outdir)
 
-    # run ctnnb1 example
+    # run nfe2l2 example
     opts = {
         'input': os.path.join(file_dir, 'data/NFE2l2_mutations_lusc.txt'),
         'degrons': os.path.join(file_dir, 'data/nfe2l2_degron_sites.txt'),
