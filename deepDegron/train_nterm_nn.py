@@ -46,27 +46,6 @@ def parse_arguments():
     return vars(args)
 
 
-def compute_nterm_feature_matrix(sequences, split, dinuc=False):
-    """Compute the feature matrix"""
-    if 0 < split < 23:
-        X = degron_pred.binned_bag_of_words(sequences.str[:split],
-                                            int(split), n=int(split),
-                                            dinuc=dinuc, cterm=False)
-        X2 = degron_pred.binned_bag_of_words(sequences.str[split:],
-                                             1, n=23-int(split),
-                                             dinuc=False, cterm=False)
-        X = np.hstack([X2.toarray(), X])
-    elif split == 0:
-        X = degron_pred.binned_bag_of_words(sequences,
-                                            int(split), n=int(split),
-                                            dinuc=False, cterm=False)
-    elif split == 23:
-        X = degron_pred.binned_bag_of_words(sequences,
-                                            int(split), n=int(split),
-                                            dinuc=dinuc, cterm=False)
-    return X
-
-
 def main(opts):
     df = pd.read_table(opts['input'])
 
@@ -91,8 +70,8 @@ def main(opts):
         for layer in layers:
             for dinuc in dinucs:
                 # sequence-specific training
-                X = compute_nterm_feature_matrix(feature_df['Peptide amino acid sequence'],
-                                                 split=split, dinuc=dinuc)
+                X = degron_pred.compute_feature_matrix(feature_df['Peptide amino acid sequence'],
+                                                       split=split, dinuc=dinuc, model='nterm')
 
                 # Train / test split
                 X_train, X_test, y_train, y_test = train_test_split(X, y,
@@ -133,8 +112,8 @@ def main(opts):
     best_epochs = top_params['epochs']
 
     # train the best model
-    X = compute_nterm_feature_matrix(feature_df['Peptide amino acid sequence'],
-                                     split=best_split, dinuc=best_dinuc)
+    X = degron_pred.compute_feature_matrix(feature_df['Peptide amino acid sequence'],
+                                           split=best_split, dinuc=best_dinuc, model='nterm')
     X_train, X_test, y_train, y_test = train_test_split(X, y,
                                                         train_size=0.7, test_size=0.3,
                                                         random_state=101,
@@ -159,8 +138,8 @@ def main(opts):
     ypred_clf1 = clf1.predict_proba(X)[:,0]
     feature_df['sequence position specific'] = ypred_clf1
     # bag of words
-    X = compute_nterm_feature_matrix(feature_df['Peptide amino acid sequence'],
-                                     split=0, dinuc=False)
+    X = degron_pred.compute_feature_matrix(feature_df['Peptide amino acid sequence'],
+                                           split=0, dinuc=False, model='nterm')
     clf2 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout,
                                    layers=best_layer, epochs=best_epochs)
     ypred_clf2 = clf2.predict_proba(X)[:,0]

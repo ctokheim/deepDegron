@@ -101,12 +101,33 @@ def nterm_binned_bag_of_words(pep_sequence, splits, n=23, dinuc=False):
     return out
 
 
-def compute_feature_matrix(sequences, split, dinuc=False):
-    """Compute the feature matrix"""
+def compute_nterm_feature_matrix(sequences, split, dinuc=False):
+    """Compute the nterm feature matrix"""
+    if 0 < split < 23:
+        X = binned_bag_of_words(sequences.str[:split],
+                                int(split), n=int(split),
+                                dinuc=dinuc, cterm=False)
+        X2 = binned_bag_of_words(sequences.str[split:],
+                                 1, n=23-int(split),
+                                 dinuc=False, cterm=False)
+        X = np.hstack([X2.toarray(), X])
+    elif split == 0:
+        X = binned_bag_of_words(sequences,
+                                int(split), n=int(split),
+                                dinuc=False, cterm=False)
+    elif split == 23:
+        X = binned_bag_of_words(sequences,
+                                int(split), n=int(split),
+                                dinuc=dinuc, cterm=False)
+    return X
+
+
+def compute_cterm_feature_matrix(sequences, split, dinuc=False):
+    """Compute the cterm feature matrix"""
     if 0 < split < 23:
         X = binned_bag_of_words(sequences.str[-split:],
-                                int(split), n=int(split),
-                                dinuc=dinuc)
+                                            int(split), n=int(split),
+                                            dinuc=dinuc)
         X2 = binned_bag_of_words(sequences.str[:-split],
                                  1, n=23-int(split), dinuc=False)
         X = np.hstack([X2.toarray(), X])
@@ -118,6 +139,15 @@ def compute_feature_matrix(sequences, split, dinuc=False):
         X = binned_bag_of_words(sequences,
                                 int(split), n=int(split),
                                 dinuc=dinuc)
+    return X
+
+
+def compute_feature_matrix(sequences, split, dinuc=False, model='cterm'):
+    """Compute the feature matrix"""
+    if model == 'cterm':
+        X = compute_cterm_feature_matrix(sequences, split, dinuc=dinuc)
+    else:
+        X = compute_nterm_feature_matrix(sequences, split, dinuc=dinuc)
     return X
 
 
@@ -152,19 +182,22 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
-    cterm_seq = [] ; vars_considered = []
+    term_seq = [] ; vars_considered = []
     for v in variants:
         if v.mutant_protein_sequence:
-            if type(v) in utils.indels+utils.nmd_sub_vars:
-                cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+            if model=='cterm' and type(v) in utils.indels+utils.nmd_sub_vars:
+                term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
                 if not is_sum: vars_considered.append(v)
             elif type(v) in utils.base_substitutions:
-                if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
-                    cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                if model=='cterm' and v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
+                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
+                elif model=='nterm' and v.aa_mutation_start_offset<=24:
+                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
                     if not is_sum: vars_considered.append(v)
 
     # return None if no variants
-    if not cterm_seq:
+    if not term_seq:
         if is_sum: return 0
         else: return [], []
     # return None if U in protein sequence
@@ -173,11 +206,11 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
         else: return [], []
 
     # construct dataframe
-    result_df = pd.DataFrame({'seq': cterm_seq})
+    result_df = pd.DataFrame({'seq': term_seq})
 
     # create feature matrix
-    X = compute_feature_matrix(result_df['seq'], 6, dinuc=True)
-    X2 = compute_feature_matrix(result_df['seq'], 0, dinuc=False)
+    X = compute_feature_matrix(result_df['seq'], 6, dinuc=True, model=model)
+    X2 = compute_feature_matrix(result_df['seq'], 0, dinuc=False, model=model)
 
     # predict scores
     result_df['prob'] = clf1.predict_proba(X)[:, 0]
@@ -188,8 +221,8 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
     wt_seq = utils.fetch_seq(tx.protein_sequence, model=model)
     wt_df = pd.DataFrame({'seq': [wt_seq]})
     # create feature matrix
-    X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True)
-    X2 = compute_feature_matrix(wt_df['seq'], 0, dinuc=False)
+    X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True, model=model)
+    X2 = compute_feature_matrix(wt_df['seq'], 0, dinuc=False, model=model)
     wt_df['prob'] = clf1.predict_proba(X)[:, 0]
     wt_df['prob2'] = clf2.predict_proba(X2)[:, 0]
     wt_df['delta prob'] = wt_df['prob'] - wt_df['prob2']
@@ -202,4 +235,3 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
         return delta_prob_sum
     else:
         return vars_considered, tmp
-
