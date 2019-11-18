@@ -25,6 +25,7 @@ import deepDegron.degron_pred as degron_pred
 from deepDegron.variants import *
 import deepDegron.simulation as simulation
 import deepDegron.pvalue as pvalue
+import csv
 
 # logging import
 import logging
@@ -89,7 +90,7 @@ def multiprocess_score(opts):
             tmp_num_proc = len(chroms) - i if i + num_processes > len(chroms) else num_processes
             info_repeat = ((opts, chroms[tmp_ix])
                             for tmp_ix in range(i, i+tmp_num_proc))
-            process_results = pool.imap(singleprocess_permutation, info_repeat)
+            process_results = pool.imap(singleprocess_score, info_repeat)
             process_results.next = utils.keyboard_exit_wrapper(process_results.next)
             try:
                 for chrom_result in process_results:
@@ -109,9 +110,9 @@ def multiprocess_score(opts):
     return result_list
 
 def score(variant_list,
-                    tx, clf1, clf2,
-                    model='cterm',
-                    nuc_context=1.5):
+          tx, clf1, clf2,
+          model='cterm',
+          nuc_context=1.5):
     """Simulate the effect of mutations on terminal degrons. Handles both c-terminal and and n-terminal degrons.
 
     """
@@ -134,15 +135,24 @@ def score(variant_list,
         return []
 
     # figure out the affect on cterminal degrons
-    delta_prob = degron_pred.delta_prob(var_sub_no_nmd+var_indel, tx, clf1, clf2, model=model)
+    myvars, delta_prob = degron_pred.delta_prob(var_sub_no_nmd+var_indel, tx, clf1, clf2, model=model, is_sum=False)
 
     # skip if no terminal variants
-    if not delta_prob:
+    if not len(delta_prob):
         return []
 
-    import IPython ; IPython.embed() ; raise
+    # fill in info about each variant
+    var_info = []
+    for ix, var in enumerate(myvars):
+        tmp = [
+            var.gene_name, var.transcript_id,
+            var.variant.contig, var.variant.start, var.variant.end,
+            var.short_description,
+            delta_prob.iloc[ix]
+        ]
+        var_info.append(tmp)
 
-    return []
+    return var_info
 
 def analyze(opts, chrom=None, analysis='cterminus'):
     # read in data
@@ -160,7 +170,9 @@ def analyze(opts, chrom=None, analysis='cterminus'):
         clf2 = degron_pred.load_classifier(clf2_path)
 
     # iterate over each gene in the MAF file
-    output_list = []
+    output_list = [['Hugo_Symbol', 'Transcript_ID', 'Chromosome',
+                    'Start_Position', 'End_Position', 'HGVSp_Short',
+                    'delta degron potential']]
     for gene in variant_dict:
         # variants for a specific gene
         ensembl_tx_name = variant_dict[gene]['transcript_name']
@@ -178,14 +190,17 @@ def analyze(opts, chrom=None, analysis='cterminus'):
             results = score(variant_list, tx, clf1, clf2, model='nterm')
 
         # append results
-        #if results:
-        #    output_list.append([gene]+list(results))
+        if results:
+            output_list += list(results)
 
     return output_list
 
 def main(opts):
     result = multiprocess_score(opts)
-    result.to_csv(opts['output'], sep='\t', index=False)
+    with open(opts['output'], 'w') as whandle:
+        mywriter = csv.writer(whandle, delimiter='\t', lineterminator='\n')
+        mywriter.writerows(result)
+
 
 if __name__ == '__main__':
     opts = parse_arguments()

@@ -148,25 +148,29 @@ def load_classifier(file_path):
     return clf
 
 
-def delta_prob(variants, tx, clf1, clf2, model='cterm'):
+def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
-    cterm_seq = []
+    cterm_seq = [] ; vars_considered = []
     for v in variants:
         if v.mutant_protein_sequence:
             if type(v) in utils.indels+utils.nmd_sub_vars:
                 cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                if not is_sum: vars_considered.append(v)
             elif type(v) in utils.base_substitutions:
                 if v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
                     cterm_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
 
     # return None if no variants
     if not cterm_seq:
-        return 0
+        if is_sum: return 0
+        else: return [], []
     # return None if U in protein sequence
     if 'U' in utils.fetch_seq(tx.protein_sequence, model=model):
-        return 0
+        if is_sum: return 0
+        else: return [], []
 
     # construct dataframe
     result_df = pd.DataFrame({'seq': cterm_seq})
@@ -192,6 +196,10 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm'):
     baseline = wt_df['delta prob'].iloc[0]
 
     # add up scores
-    delta_prob_sum = (result_df['delta prob'] - baseline).sum()
+    tmp = result_df['delta prob'] - baseline
+    if is_sum:
+        delta_prob_sum = tmp.sum()
+        return delta_prob_sum
+    else:
+        return vars_considered, tmp
 
-    return delta_prob_sum
