@@ -235,3 +235,57 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
         return delta_prob_sum
     else:
         return vars_considered, tmp
+
+
+def delta_prob_raw(variants, tx, clf1, clf2, model='cterm', is_sum=True):
+    """Calculate the difference between a position specific
+    model and a "bag of words" model"""
+    # fetch c-terminal sequence
+    term_seq = [] ; vars_considered = []
+    for v in variants:
+        if v.mutant_protein_sequence:
+            if model=='cterm' and type(v) in utils.indels+utils.nmd_sub_vars:
+                term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                if not is_sum: vars_considered.append(v)
+            elif type(v) in utils.base_substitutions:
+                if model=='cterm' and v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
+                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
+                elif model=='nterm' and v.aa_mutation_start_offset<=24:
+                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
+
+    # return None if no variants
+    if not term_seq:
+        if is_sum: return 0
+        else: return [], []
+    # return None if U in protein sequence
+    if 'U' in utils.fetch_seq(tx.protein_sequence, model=model):
+        if is_sum: return 0
+        else: return [], []
+
+    # construct dataframe
+    result_df = pd.DataFrame({'seq': term_seq})
+
+    # create feature matrix
+    X = compute_feature_matrix(result_df['seq'], 6, dinuc=True, model=model)
+    X2 = compute_feature_matrix(result_df['seq'], 0, dinuc=False, model=model)
+
+    # predict scores
+    result_df['prob'] = clf1.predict_proba(X)[:, 0]
+
+    # adjust for baseline score
+    wt_seq = utils.fetch_seq(tx.protein_sequence, model=model)
+    wt_df = pd.DataFrame({'seq': [wt_seq]})
+    # create feature matrix
+    X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True, model=model)
+    wt_df['prob'] = clf1.predict_proba(X)[:, 0]
+    baseline = wt_df['prob'].iloc[0]
+
+    # add up scores
+    tmp = result_df['prob'] - baseline
+    if is_sum:
+        prob_sum = tmp.sum()
+        return prob_sum
+    else:
+        return vars_considered, tmp, result_df['prob']

@@ -50,6 +50,9 @@ def parse_arguments():
     parser.add_argument('-n', '--nterm-models',
                         type=str, default=None,
                         help='Path to saved nterminal degron models')
+    parser.add_argument('-r', '--raw',
+                        action='store_true', default=False,
+                        help='Use raw deepDegron score')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
                         help='Number of processes')
@@ -154,6 +157,52 @@ def score(variant_list,
 
     return var_info
 
+def score_raw(variant_list,
+          tx, clf1, clf2,
+          model='cterm',
+          nuc_context=1.5):
+    """Simulate the effect of mutations on terminal degrons. Handles both c-terminal and and n-terminal degrons.
+
+    """
+    # interpet variant context
+    var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
+    trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
+
+    # filter for indel variants
+    var_indel = [x for x in variant_list
+                 if x.__class__ in utils.indels
+                 and x.variant.is_indel]
+    dna_change_indel = [[v.variant.contig, v.variant.start, v.variant.ref, v.variant.alt]
+                        for v in var_indel]
+    # skip dropping based on nmd
+    #var_indel = utils.nmd(var_indel, tx, drop=True)
+
+    # return if no substitution
+    if not var_sub and not var_indel:
+        return []
+
+    # figure out the affect on cterminal degrons
+    myvars, delta_prob, prob = degron_pred.delta_prob_raw(var_sub_no_nmd+var_indel, tx, clf1, clf2, model=model, is_sum=False)
+
+    # skip if no terminal variants
+    if not len(delta_prob):
+        return []
+
+    # fill in info about each variant
+    var_info = []
+    for ix, var in enumerate(myvars):
+        tmp = [
+            var.gene_name, var.transcript_id,
+            var.variant.contig, var.variant.start, var.variant.end,
+            var.short_description,
+            delta_prob.iloc[ix], prob.iloc[ix]
+        ]
+        var_info.append(tmp)
+
+    return var_info
+
 def analyze(opts, chrom=None, analysis='cterminus'):
     # read in data
     variant_dict = read_maf(opts['input'], chrom)
@@ -170,9 +219,14 @@ def analyze(opts, chrom=None, analysis='cterminus'):
         clf2 = degron_pred.load_classifier(clf2_path)
 
     # iterate over each gene in the MAF file
-    output_list = [['Hugo_Symbol', 'Transcript_ID', 'Chromosome',
-                    'Start_Position', 'End_Position', 'HGVSp_Short',
-                    'delta degron potential']]
+    if not opts['raw']:
+        output_list = [['Hugo_Symbol', 'Transcript_ID', 'Chromosome',
+                        'Start_Position', 'End_Position', 'HGVSp_Short',
+                        'delta degron potential']]
+    else:
+        output_list = [['Hugo_Symbol', 'Transcript_ID', 'Chromosome',
+                        'Start_Position', 'End_Position', 'HGVSp_Short',
+                        'delta deepDegron score', 'deepDegron score']]
     for gene in variant_dict:
         # variants for a specific gene
         ensembl_tx_name = variant_dict[gene]['transcript_name']
@@ -184,10 +238,16 @@ def analyze(opts, chrom=None, analysis='cterminus'):
             continue
 
         # calculate the significance
-        if analysis == 'cterminus':
-            results = score(variant_list, tx, clf1, clf2, model='cterm')
-        elif analysis == 'nterminus':
-            results = score(variant_list, tx, clf1, clf2, model='nterm')
+        if not opts['raw']:
+            if analysis == 'cterminus':
+                results = score(variant_list, tx, clf1, clf2, model='cterm')
+            elif analysis == 'nterminus':
+                results = score(variant_list, tx, clf1, clf2, model='nterm')
+        else:
+            if analysis == 'cterminus':
+                results = score_raw(variant_list, tx, clf1, clf2, model='cterm')
+            elif analysis == 'nterminus':
+                results = score_raw(variant_list, tx, clf1, clf2, model='nterm')
 
         # append results
         if results:
