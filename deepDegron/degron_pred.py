@@ -258,11 +258,11 @@ def delta_prob_raw(variants, tx, clf1, clf2, model='cterm', is_sum=True):
     # return None if no variants
     if not term_seq:
         if is_sum: return 0
-        else: return [], []
+        else: return [], [], []
     # return None if U in protein sequence
     if 'U' in utils.fetch_seq(tx.protein_sequence, model=model):
         if is_sum: return 0
-        else: return [], []
+        else: return [], [], []
 
     # construct dataframe
     result_df = pd.DataFrame({'seq': term_seq})
@@ -289,3 +289,4 @@ def delta_prob_raw(variants, tx, clf1, clf2, model='cterm', is_sum=True):
         return prob_sum
     else:
         return vars_considered, tmp, result_df['prob']
+
