@@ -12,7 +12,10 @@ def read_variant(var_info, tx):
                             ref=var_info[2],
                             alt=var_info[3],
                             ensembl=ensembl_grch37)
-    myeffect = predict_variant_effect_on_transcript(myvar, tx)
+    try:
+        myeffect = predict_variant_effect_on_transcript(myvar, tx)
+    except ValueError:
+        myeffect = None
     return myeffect
 
 
@@ -48,10 +51,18 @@ def read_maf(file_path, chrom=None):
     # add variants to list
     variant_dict = {}
     for (g, t), rows in it.groupby(maf_list, key_func):
+        # skip if no transcript
+        if t == '':
+            continue
+        try:
+            varcode_tx = data.transcript_by_id(t)
+        except ValueError:
+            print('{} not found!'.format(t))
+            continue
+
         # set defaults
         variant_dict.setdefault(g, {})
         variant_dict[g].setdefault('transcript_name', t)
-        varcode_tx = data.transcript_by_id(t)
         variant_dict[g].setdefault('transcript', varcode_tx)
 
         # parse each variant
@@ -64,7 +75,8 @@ def read_maf(file_path, chrom=None):
             # parse variant
             tmp_info = [row[chrom_ix], row[start_ix], row[ref_ix], row[alt_ix]]
             myeffect = read_variant(tmp_info, varcode_tx)
-            variant_list.append(myeffect)
+            if myeffect:
+                variant_list.append(myeffect)
 
         variant_dict[g]['variants'] = variant_list
 
