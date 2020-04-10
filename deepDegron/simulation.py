@@ -138,10 +138,12 @@ def terminal_degron(variant_list,
 
     # figure out the affect on cterminal degrons
     delta_prob = degron_pred.delta_prob(var_sub_no_nmd+var_indel, tx, clf1, clf2, model=model)
+    seqs, _ = utils.process_var_seq(var_sub_no_nmd+var_indel, model=model)
+    num_impactful_muts = len(seqs)
 
     # skip if no terminal variants
     if not delta_prob:
-        return 0, 1
+        return 0, 1, 0
 
     # create sequence context obj
     seq_context = sc.SequenceContext(tx, nuc_context)
@@ -209,4 +211,4 @@ def terminal_degron(variant_list,
     # compute p-value
     delta_prob_pval = delta_prob_ct / float(iter_sim)
 
-    return delta_prob, delta_prob_pval
+    return delta_prob, delta_prob_pval, num_impactful_muts
