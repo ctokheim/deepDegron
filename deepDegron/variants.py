@@ -5,7 +5,7 @@ import csv
 import itertools as it
 from deepDegron import utils
 
-def read_variant(var_info, tx):
+def read_variant(var_info, tx, catch_errors=False):
     """Annotate a variant on a specific transcript."""
     myvar = varcode.Variant(contig=var_info[0],
                             start=int(var_info[1]),
@@ -16,6 +16,8 @@ def read_variant(var_info, tx):
         myeffect = predict_variant_effect_on_transcript(myvar, tx)
     except ValueError:
         myeffect = None
+        if not catch_errors:
+            raise
     return myeffect
 
 
@@ -49,6 +51,7 @@ def read_maf(file_path, chrom=None):
     maf_list = sorted(maf_list, key=key_func)
 
     # add variants to list
+    var_read_errors = 0
     variant_dict = {}
     for (g, t), rows in it.groupby(maf_list, key_func):
         # skip if no transcript
@@ -74,11 +77,15 @@ def read_maf(file_path, chrom=None):
 
             # parse variant
             tmp_info = [row[chrom_ix], row[start_ix], row[ref_ix], row[alt_ix]]
-            myeffect = read_variant(tmp_info, varcode_tx)
+            myeffect = read_variant(tmp_info, varcode_tx, catch_errors=True)
             if myeffect:
                 variant_list.append(myeffect)
+            else:
+                var_read_errors += 1
 
         variant_dict[g]['variants'] = variant_list
+
+    print('Number of problematic variants: {}'.format(var_read_errors))
 
     return variant_dict
 
