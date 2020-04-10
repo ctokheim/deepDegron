@@ -162,7 +162,7 @@ def process_ub_results(output_list):
 
 def process_terminal_degron_results(output_list):
     """Process the results from cterminal degron mutation analysis."""
-    mycols = ['gene', 'delta_degron_potential', 'pvalue']
+    mycols = ['gene', 'delta_degron_potential', 'pvalue', 'num_degron_impactful_muts', 'total_muts', 'average position']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
@@ -174,3 +174,32 @@ def fetch_seq(seq, model='cterm'):
         return seq[-23:]
     else:
         return seq[1:24]
+
+
+def process_var_seq(variants, model='cterm', is_sum=True):
+    """This fetches protein sequences for only those that impact the terminal ends of the protein."""
+    term_seq = [] ; vars_considered = []
+    for v in variants:
+        if v.mutant_protein_sequence:
+            if model=='cterm' and type(v) in indels+nmd_sub_vars:
+                term_seq.append(fetch_seq(v.mutant_protein_sequence, model=model))
+                if not is_sum: vars_considered.append(v)
+            elif type(v) in base_substitutions:
+                if model=='cterm' and v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
+                    term_seq.append(fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
+                elif model=='nterm' and v.aa_mutation_start_offset<=24:
+                    term_seq.append(fetch_seq(v.mutant_protein_sequence, model=model))
+                    if not is_sum: vars_considered.append(v)
+    return term_seq, vars_considered
+
+
+def fetch_tx_by_gene(gene_name, ensembl_data):
+    tx_ids = ensembl_data.transcript_ids_of_gene_name(gene_name)
+    tx_list = []
+    for tx_id in tx_ids:
+        tx = ensembl_data.transcript_by_id(tx_id)
+        if tx.biotype=='protein_coding' and tx.complete:
+            tx_list.append(tx)
+    return tx_list
+
