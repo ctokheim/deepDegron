@@ -157,6 +157,16 @@ def analyze(opts, chrom=None, analysis='degrons'):
         ensembl_tx_name = variant_dict[gene]['transcript_name']
         tx = variant_dict[gene]['transcript']
         variant_list = variant_dict[gene]['variants']
+        num_vars = len(variant_list)
+
+        # compute the average position of the variants
+        try:
+            aa_len = len(tx.coding_sequence)/3
+            avg_pos = np.mean([v.aa_mutation_start_offset/aa_len
+                            for v in variant_list
+                            if v.aa_mutation_start_offset is not None])
+        except:
+            avg_pos = np.nan
 
         # only consider genes with degrons
         if analysis == 'degrons' and gene not in degron_intvls:
@@ -182,7 +192,7 @@ def analyze(opts, chrom=None, analysis='degrons'):
 
         # append results
         if results:
-            output_list.append([gene]+list(results))
+            output_list.append([gene]+list(results)+[num_vars, avg_pos])
 
     return output_list
 
