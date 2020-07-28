@@ -182,19 +182,7 @@ def delta_prob(variants, tx, clf1, clf2, model='cterm', is_sum=True):
     """Calculate the difference between a position specific
     model and a "bag of words" model"""
     # fetch c-terminal sequence
-    term_seq = [] ; vars_considered = []
-    for v in variants:
-        if v.mutant_protein_sequence:
-            if model=='cterm' and type(v) in utils.indels+utils.nmd_sub_vars:
-                term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
-                if not is_sum: vars_considered.append(v)
-            elif type(v) in utils.base_substitutions:
-                if model=='cterm' and v.aa_mutation_start_offset>(len(v.transcript.protein_sequence) - 23):
-                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
-                    if not is_sum: vars_considered.append(v)
-                elif model=='nterm' and v.aa_mutation_start_offset<=24:
-                    term_seq.append(utils.fetch_seq(v.mutant_protein_sequence, model=model))
-                    if not is_sum: vars_considered.append(v)
+    term_seq, vars_considered = utils.process_var_seq(variants, model=model, is_sum=is_sum)
 
     # return None if no variants
     if not term_seq:
@@ -289,4 +277,29 @@ def delta_prob_raw(variants, tx, clf1, clf2, model='cterm', is_sum=True):
         return prob_sum
     else:
         return vars_considered, tmp, result_df['prob']
+
+
+def delta_prob_wildtype(tx, clf1, clf2, model='cterm', seq=None):
+    """Calculate the difference between a position specific
+    model and a "bag of words" model"""
+    if seq is None:
+        # fetch c-terminal sequence
+        wt_seq = utils.fetch_seq(tx.protein_sequence, model=model)
+    else:
+        wt_seq = seq
+
+    # return None if U in protein sequence
+    if 'U' in wt_seq:
+        return None
+
+    # adjust for baseline score
+    wt_df = pd.DataFrame({'seq': [wt_seq]})
+    # create feature matrix
+    X = compute_feature_matrix(wt_df['seq'], 6, dinuc=True, model=model)
+    X2 = compute_feature_matrix(wt_df['seq'], 0, dinuc=False, model=model)
+    wt_df['prob'] = clf1.predict_proba(X)[:, 0]
+    wt_df['prob2'] = clf2.predict_proba(X2)[:, 0]
+    wt_df['delta prob'] = wt_df['prob'] - wt_df['prob2']
+
+    return wt_df
 
