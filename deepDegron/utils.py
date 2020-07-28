@@ -195,8 +195,11 @@ def process_var_seq(variants, model='cterm', is_sum=True):
 
 
 def fetch_tx_by_gene(gene_name, ensembl_data):
-    tx_ids = ensembl_data.transcript_ids_of_gene_name(gene_name)
     tx_list = []
+    try:
+        tx_ids = ensembl_data.transcript_ids_of_gene_name(gene_name)
+    except ValueError:
+        return tx_list
     for tx_id in tx_ids:
         tx = ensembl_data.transcript_by_id(tx_id)
         if tx.biotype=='protein_coding' and tx.complete:
