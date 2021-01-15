@@ -53,6 +53,101 @@ def degron(variant_list,
     return num_deg_mut, deg_pval
 
 
+def degron_with_indel(variant_list,
+                      tx, deg_intervals,
+                      nuc_context=3,
+                      num_simulations=10000):
+    # interpet variant context
+    var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    #trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
+    trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
+
+    # filter for indel variants
+    var_indel = [x for x in variant_list
+                 if x.__class__ in utils.indels
+                 and x.variant.is_indel]
+    dna_change_indel = [[v.variant.contig, v.variant.start, v.variant.ref, v.variant.alt]
+                        for v in var_indel]
+    var_indel = utils.nmd(var_indel, tx, drop=True)
+
+    # return if no substitution
+    if not var_sub and not var_indel:
+        return None
+
+    # create sequence context obj
+    seq_context = sc.SequenceContext(tx, nuc_context)
+    seq_context_indel = sc.SequenceContext(tx, 0)
+
+    # figure out how many affect lysines
+    num_deg_mut = 0
+    for myvariant in var_sub_no_nmd + var_indel:
+        num_deg_mut += utils.overlap_with_intervals(myvariant, deg_intervals)
+
+    # return p-value of 1 if no degrons affected
+    if num_deg_mut == 0:
+        return 0, 1
+
+    # simulate new mutations
+    if var_sub:
+        random_sub = seq_context.random_pos(trinuc_count, num_simulations)
+        tmp_mut_pos = np.hstack([abs_pos for ctxt, cds_pos, abs_pos in random_sub])
+    if var_indel:
+        tmp_input = [('None', len(dna_change_indel))]
+        random_indel = seq_context_indel.random_pos(tmp_input, num_simulations)
+        tmp_mut_pos_indel = random_indel[0][2]
+
+    # evaluate the simulations
+    num_sub, num_indel = len(dna_change_sub), len(dna_change_indel)
+    degron_ct, iter_sim = 0, 0
+    #for sim_pos in tmp_mut_pos:
+    for i in range(num_simulations):
+        # get the variant effect for simulated mutations
+        if var_sub_no_nmd:
+            sim_pos = tmp_mut_pos[i,:]
+            sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
+            num_sim_subs = len(sim_variant_subs)
+            sim_variant_subs = utils.filter_nmd_subs(sim_variant_subs, tx)
+        else:
+            num_sim_subs = 0
+            sim_variant_subs = []
+
+        # get infor for indel
+        if var_indel:
+            sim_pos_indel = tmp_mut_pos_indel[i, :]
+            sim_variant_indel = variants.get_mutation_info(sim_pos_indel, tx, dna_change_indel)
+            num_sim_indels = len(sim_variant_indel)
+            sim_variant_indel = utils.nmd(sim_variant_indel, tx, drop=True)
+        else:
+            num_sim_indels = 0
+            sim_variant_indel = []
+
+        # combine together simulated variants
+        sim_combined = sim_variant_subs + sim_variant_indel
+
+        if not sim_combined:
+            degron_ct += 1
+        else:
+            # count the degron mutations
+            sim_num_mut = 0
+            for sim_var in sim_combined:
+                sim_num_mut += utils.overlap_with_intervals(sim_var, deg_intervals)
+            if sim_num_mut >= num_deg_mut:
+                degron_ct += 1
+
+        # update number of iterations
+        iter_sim += 1
+
+        # stop if sufficient number of simulations reached
+        if degron_ct>=100:
+            break
+
+    # compute p-value
+    deg_pval = degron_ct / float(iter_sim)
+
+    return num_deg_mut, deg_pval
+
+
 def site(variant_list,
          tx, ub_intervals,
          nuc_context=3,
@@ -212,3 +307,106 @@ def terminal_degron(variant_list,
     delta_prob_pval = delta_prob_ct / float(iter_sim)
 
     return delta_prob, delta_prob_pval, num_impactful_muts
+
+
+def clustered_truncation(variant_list,
+                         tx,
+                         nuc_context=3,
+                         num_simulations=10000,
+                         side='lesser'):
+    # interpet variant context
+    var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    #trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
+    trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
+
+    # filter for indel variants
+    var_indel = [x for x in variant_list
+                 if x.__class__ in utils.indels
+                 and x.variant.is_indel]
+    dna_change_indel = [[v.variant.contig, v.variant.start, v.variant.ref, v.variant.alt]
+                        for v in var_indel]
+    var_indel = utils.nmd(var_indel, tx, drop=True)
+
+    # return if no substitution
+    if not var_sub and not var_indel:
+        return None
+
+    # create sequence context obj
+    seq_context = sc.SequenceContext(tx, nuc_context)
+    seq_context_indel = sc.SequenceContext(tx, 0)
+
+    # figure out how many are trunc muts
+    num_trunc = 0
+    for myvariant in var_sub_no_nmd + var_indel:
+        is_trunc = myvariant.__class__ in utils.trunc_types
+        if is_trunc:
+            num_trunc += 1
+
+    # return p-value of 1 if no degrons affected
+    if num_trunc == 0:
+        return 0, 1
+
+    # simulate new mutations
+    if var_sub:
+        random_sub = seq_context.random_pos(trinuc_count, num_simulations)
+        tmp_mut_pos = np.hstack([abs_pos for ctxt, cds_pos, abs_pos in random_sub])
+    if var_indel:
+        tmp_input = [('None', len(dna_change_indel))]
+        random_indel = seq_context_indel.random_pos(tmp_input, num_simulations)
+        tmp_mut_pos_indel = random_indel[0][2]
+
+    # evaluate the simulations
+    num_sub, num_indel = len(dna_change_sub), len(dna_change_indel)
+    trunc_ct, iter_sim = 0, 0
+    #for sim_pos in tmp_mut_pos:
+    for i in range(num_simulations):
+        # get the variant effect for simulated mutations
+        if var_sub_no_nmd:
+            sim_pos = tmp_mut_pos[i,:]
+            sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
+            num_sim_subs = len(sim_variant_subs)
+            sim_variant_subs = utils.filter_nmd_subs(sim_variant_subs, tx)
+        else:
+            num_sim_subs = 0
+            sim_variant_subs = []
+
+        # get infor for indel
+        if var_indel:
+            sim_pos_indel = tmp_mut_pos_indel[i, :]
+            sim_variant_indel = variants.get_mutation_info(sim_pos_indel, tx, dna_change_indel)
+            num_sim_indels = len(sim_variant_indel)
+            sim_variant_indel = utils.nmd(sim_variant_indel, tx, drop=True)
+        else:
+            num_sim_indels = 0
+            sim_variant_indel = []
+
+        # combine together simulated variants
+        sim_combined = sim_variant_subs + sim_variant_indel
+
+        if not sim_combined:
+            trunc_ct += 1
+        else:
+            # count the degron mutations
+            sim_num_mut = 0
+            for sim_var in sim_combined:
+                is_trunc = sim_var.__class__ in utils.trunc_types
+                if is_trunc:
+                    sim_num_mut += 1
+            if side=="greater" and sim_num_mut >= num_trunc:
+                trunc_ct += 1
+            elif side=="lesser" and sim_num_mut <= num_trunc:
+                trunc_ct += 1
+
+        # update number of iterations
+        iter_sim += 1
+
+        # stop if sufficient number of simulations reached
+        if trunc_ct>=100:
+            break
+
+    # compute p-value
+    trunc_pval = trunc_ct / float(iter_sim)
+
+    return num_trunc, trunc_pval
+
