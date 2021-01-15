@@ -50,6 +50,9 @@ def parse_arguments():
     parser.add_argument('-n', '--nterm-models',
                         type=str, default=None,
                         help='Path to saved nterminal degron models')
+    parser.add_argument('-release', '--release',
+                        type=int, default=75,
+                        help='Ensembl release')
     parser.add_argument('-r', '--raw',
                         action='store_true', default=False,
                         help='Use raw deepDegron score')
@@ -74,7 +77,7 @@ def singleprocess_score(info):
     """Unpacks the multiprocess input"""
     options, mychr = info
     analysis_type = check_analysis_type(options)
-    return analyze(options, chrom=mychr, analysis=analysis_type)
+    return analyze(options, chrom=mychr, analysis=analysis_type, release=options['release'])
 
 def multiprocess_score(opts):
     """Handles parallelization of permutations by splitting work
@@ -108,7 +111,7 @@ def multiprocess_score(opts):
             pool.join()
     else:
         analysis_type = check_analysis_type(opts)
-        result_list += analyze(opts, analysis=analysis_type)
+        result_list += analyze(opts, analysis=analysis_type, release=opts['release'])
 
     return result_list
 
@@ -203,9 +206,9 @@ def score_raw(variant_list,
 
     return var_info
 
-def analyze(opts, chrom=None, analysis='cterminus'):
+def analyze(opts, chrom=None, release=75, analysis='cterminus'):
     # read in data
-    variant_dict = read_maf(opts['input'], chrom)
+    variant_dict = read_maf(opts['input'], chrom, release)
 
     # read the c-terminus classifier
     if analysis == 'cterminus':
