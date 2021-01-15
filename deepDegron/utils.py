@@ -22,6 +22,10 @@ base_substitutions = [varcode.effects.Substitution, varcode.effects.Silent,
                       varcode.effects.StartLoss, varcode.effects.StopLoss]
 indels = [varcode.effects.Deletion, varcode.effects.Insertion, varcode.effects.FrameShift]
 nmd_sub_vars = [varcode.effects.PrematureStop]
+trunc_types = [
+    # varcode.effects.PrematureStop,
+    varcode.effects.FrameShift,
+    varcode.effects.PrematureStop, varcode.effects.StopLoss]
 
 def rev_comp(seq):
     """Get reverse complement of sequence.
@@ -40,12 +44,8 @@ def rev_comp(seq):
     return rev_comp_seq
 
 
-def nmd(variant_list, tx, drop=False):
-    """This function is meant to identify whether an early stop codon
-    will cause NMD."""
-    # length of normal protein sequence
-    normal_prot_len = len(tx.protein_sequence)
-
+def get_nmd_insensitive_len(tx):
+    """Gets the length of the protein that would be insensitive to NMD."""
     # figure out the length of the last coding exon interval
     last_coding_intvl = tx.coding_sequence_position_ranges[-1]
     last_coding_len = last_coding_intvl[1] - last_coding_intvl[0] + 1
@@ -53,6 +53,16 @@ def nmd(variant_list, tx, drop=False):
     # rule of thumb for NMD is that stop codons within 50nt of the
     # last exon-exon junction are not efficiently degraded
     nmd_insensitive_len = last_coding_len/3. + 50/3.
+
+    return nmd_insensitive_len
+
+
+def nmd(variant_list, tx, drop=False):
+    """This function is meant to identify whether an early stop codon
+    will cause NMD."""
+    # length of normal protein sequence
+    normal_prot_len = len(tx.protein_sequence)
+    nmd_insensitive_len = get_nmd_insensitive_len(tx)
 
     # iterate over each variant
     nmd_sensitive_list = []
@@ -97,17 +107,24 @@ def keyboard_exit_wrapper(func):
     return wrap
 
 
-def read_degron_intervals(path):
+def read_degron_intervals(path, use_tx=False):
     """Read in the sites of degrons."""
     with open(path) as handle:
         myreader = csv.reader(handle, delimiter='\t')
         header = next(myreader)
 
+        # figure out index
+        gene_ix = header.index('gene')
+        start_ix = header.index('start')
+        end_ix = header.index('end')
+        if use_tx:
+            gene_ix = header.index('transcript_id')
+
         degron_dict = {}
         for line in myreader:
-            gene = line[0]
-            start = int(line[1])
-            end = int(line[2])
+            gene = line[gene_ix]
+            start = int(line[start_ix])
+            end = int(line[end_ix])
 
             # add interval
             degron_dict.setdefault(gene, [])
@@ -135,18 +152,36 @@ def read_sites(path, num_flank):
 
 
 def overlap_with_intervals(myvariant, intervals):
-    """Check if variant is in any degron."""
+    """Check if variant effects any degron."""
     is_sub = myvariant.__class__ is varcode.effects.Substitution
-    if is_sub:
+    is_nonsense = myvariant.__class__ is varcode.effects.PrematureStop
+    is_fs = myvariant.__class__ is varcode.effects.FrameShift
+    is_indel = (myvariant.__class__ is varcode.effects.Deletion) | (myvariant.__class__ is varcode.effects.Insertion)
+
+    if is_sub or is_indel:
         is_in_intvl = variants.is_overlap(myvariant.aa_mutation_start_offset+1, intervals)
         if is_in_intvl:
             return 1
+    elif is_nonsense or is_fs:
+        var_pos = myvariant.aa_mutation_start_offset+1
+        for s, e in intervals:
+            if var_pos<e:
+                return 1
+
     return 0
 
 
 def process_degron_results(output_list):
     """Process the results from the degron enrichment analysis."""
-    mycols = ['gene', 'num_degron_muts', 'pvalue']
+    mycols = ['gene', 'num_degron_muts', 'pvalue', 'total_muts', 'average position']
+    output_df = pd.DataFrame(output_list, columns=mycols)
+    output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
+    return output_df
+
+
+def process_trunc_results(output_list):
+    """Process the results from the clustered truncation analysis."""
+    mycols = ['gene', 'num_truncations', 'pvalue', 'total_muts', 'average position']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
