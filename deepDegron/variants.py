@@ -1,17 +1,17 @@
 import varcode
 from varcode.effects import *
-from pyensembl import ensembl_grch37, EnsemblRelease
+from pyensembl import ensembl_grch37, ensembl_grch38, EnsemblRelease
 import csv
 import itertools as it
 from deepDegron import utils
 
-def read_variant(var_info, tx, catch_errors=False):
+def read_variant(var_info, tx, ensemb_ref=ensembl_grch37, catch_errors=False):
     """Annotate a variant on a specific transcript."""
     myvar = varcode.Variant(contig=var_info[0],
                             start=int(var_info[1]),
                             ref=var_info[2],
                             alt=var_info[3],
-                            ensembl=ensembl_grch37)
+                            ensembl=ensemb_ref)
     try:
         myeffect = predict_variant_effect_on_transcript(myvar, tx)
     except ValueError:
@@ -21,10 +21,14 @@ def read_variant(var_info, tx, catch_errors=False):
     return myeffect
 
 
-def read_maf(file_path, chrom=None):
+def read_maf(file_path, chrom=None, release=95):
     """Read a MAF file using varcode."""
     # varcode ensembl release
-    data = EnsemblRelease(75)
+    data = EnsemblRelease(release)
+    if release>75:
+        ensemb_ref = ensembl_grch38
+    else:
+        ensemb_ref = ensembl_grch37
 
     # read in maf from file
     with open(file_path) as handle:
@@ -77,7 +81,7 @@ def read_maf(file_path, chrom=None):
 
             # parse variant
             tmp_info = [row[chrom_ix], row[start_ix], row[ref_ix], row[alt_ix]]
-            myeffect = read_variant(tmp_info, varcode_tx, catch_errors=True)
+            myeffect = read_variant(tmp_info, varcode_tx, ensemb_ref, catch_errors=True)
             if myeffect:
                 variant_list.append(myeffect)
             else:
