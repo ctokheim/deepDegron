@@ -46,6 +46,9 @@ def parse_arguments():
     parser.add_argument('-d', '--degrons',
                         type=str, default=None,
                         help='Degron locations')
+    parser.add_argument('-t', '--truncation',
+                        action='store_true', default=False,
+                        help='Analyze clustering of truncating mutations')
     parser.add_argument('-s', '--sites',
                         type=str, default=None,
                         help='Sites of interest')
@@ -118,6 +121,8 @@ def check_analysis_type(options):
         analysis_type = 'cterminus'
     elif options['nterm_models']:
         analysis_type = 'nterminus'
+    elif options['truncation']:
+        analysis_type = 'truncation'
     else:
         analysis_type = 'sites'
     return analysis_type
@@ -163,32 +168,41 @@ def analyze(opts, chrom=None, analysis='degrons'):
         try:
             aa_len = len(tx.coding_sequence)/3
             avg_pos = np.mean([v.aa_mutation_start_offset/aa_len
-                            for v in variant_list
-                            if v.aa_mutation_start_offset is not None])
+                               for v in variant_list
+                               if v.aa_mutation_start_offset is not None])
         except:
             avg_pos = np.nan
 
+        ## Skip genes not relevant for a particular analysis ##
         # only consider genes with degrons
         if analysis == 'degrons' and gene not in degron_intvls:
             continue
-
         # only consider genes with ub sites
         if analysis == 'sites' and ensembl_tx_name not in ub_intvls:
             continue
-
         # skip non-protein coding genes
         if tx.biotype != 'protein_coding' or not tx.complete:
             continue
+        # skip genes lacking NMD sensitive region
+        if analysis == 'truncation':
+            normal_prot_len = len(tx.protein_sequence)
+            nmd_insens = utils.get_nmd_insensitive_len(tx)
+            frac_nmd_insens = float(nmd_insens) / normal_prot_len
+            if frac_nmd_insens >= 1:
+                continue
 
         # calculate the significance
         if analysis == 'degrons':
-            results = simulation.degron(variant_list, tx, degron_intvls[gene], num_simulations=opts['num_sim'])
+            #results = simulation.degron(variant_list, tx, degron_intvls[gene], num_simulations=opts['num_sim'])
+            results = simulation.degron_with_indel(variant_list, tx, degron_intvls[gene], num_simulations=opts['num_sim'])
         elif analysis == 'cterminus':
             results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='cterm', num_simulations=opts['num_sim'])
         elif analysis == 'nterminus':
             results = simulation.terminal_degron(variant_list, tx, clf1, clf2, model='nterm', num_simulations=opts['num_sim'])
         elif analysis == 'sites':
             results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name], num_simulations=opts['num_sim'])
+        elif analysis == 'truncation':
+            results = simulation.clustered_truncation(variant_list, tx, num_simulations=opts['num_sim'])
 
         # append results
         if results:
@@ -208,6 +222,8 @@ def main(opts):
         output_df = utils.process_ub_results(results)
     elif opts['cterm_models'] or opts['nterm_models']:
         output_df = utils.process_terminal_degron_results(results)
+    elif opts['truncation']:
+        output_df = utils.process_trunc_results(results)
 
     # save the results
     output_df.to_csv(opts['output'], sep='\t', index=False)
