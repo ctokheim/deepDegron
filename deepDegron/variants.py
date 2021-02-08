@@ -21,7 +21,7 @@ def read_variant(var_info, tx, ensemb_ref=ensembl_grch37, catch_errors=False):
     return myeffect
 
 
-def read_maf(file_path, chrom=None, release=95):
+def read_maf(file_path, chrom=None, release=95, include_samples=False):
     """Read a MAF file using varcode."""
     # varcode ensembl release
     data = EnsemblRelease(release)
@@ -42,6 +42,7 @@ def read_maf(file_path, chrom=None, release=95):
         alt_ix = header.index('Tumor_Seq_Allele2')
         tx_ix = header.index('Transcript_ID')
         gene_ix = header.index('Hugo_Symbol')
+        samp_ix = header.index('Tumor_Sample_Barcode')
 
         # read data
         maf_list = list(myreader)
@@ -71,9 +72,12 @@ def read_maf(file_path, chrom=None, release=95):
         variant_dict.setdefault(g, {})
         variant_dict[g].setdefault('transcript_name', t)
         variant_dict[g].setdefault('transcript', varcode_tx)
+        if include_samples:
+            variant_dict[g].setdefault('samples', [])
 
         # parse each variant
         variant_list = []
+        sample_list = []
         for row in rows:
             # skip if N in ref/alt of variant
             if 'N' in row[ref_ix] or 'N' in row[alt_ix] or len(row[ref_ix])>10:
@@ -84,10 +88,14 @@ def read_maf(file_path, chrom=None, release=95):
             myeffect = read_variant(tmp_info, varcode_tx, ensemb_ref, catch_errors=True)
             if myeffect:
                 variant_list.append(myeffect)
+                if include_samples:
+                    sample_list.append(row[samp_ix])
             else:
                 var_read_errors += 1
 
         variant_dict[g]['variants'] = variant_list
+        if include_samples:
+            variant_dict[g]['samples'] = sample_list
 
     print('Number of problematic variants: {}'.format(var_read_errors))
 
