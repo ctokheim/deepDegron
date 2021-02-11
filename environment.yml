@@ -1,0 +1,16 @@
+name: deepDegron
+channels:
+- bioconda
+- defaults
+dependencies:
+- pip
+- numpy=1.16.4
+- scipy 
+- nose 
+- pandas 
+- scikit-learn 
+- tensorflow=1.14.0
+- keras
+- pip:
+  - pyensembl
+  - varcode
