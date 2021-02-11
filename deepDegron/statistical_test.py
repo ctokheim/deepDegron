@@ -67,6 +67,9 @@ def parse_arguments():
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
                         help='Number of processes')
+    parser.add_argument('-e', '--ensembl-release',
+                        type=int, default=75,
+                        help='Ensembl release version number for gene annotations in varcode')
     parser.add_argument('-o', '--output',
                         type=str, required=True,
                         help='Result file')
@@ -137,7 +140,7 @@ def singleprocess_permutation(info):
 
 def analyze(opts, chrom=None, analysis='degrons'):
     # read in data
-    variant_dict = read_maf(opts['input'], chrom)
+    variant_dict = read_maf(opts['input'], chrom)#, release=opts['ensembl_release'])
 
     # read in the degron data
     if analysis == 'degrons':

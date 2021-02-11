@@ -20,6 +20,7 @@ def test_nfe2l2_main():
         'processes': 0,
         'cterm_models': None,
         'nterm_models': None,
+        'ensembl_release': 75,
         'output': os.path.join(file_dir, 'output/nfe2l2_degron_results.txt')
     }
     test.main(opts)

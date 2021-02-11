@@ -21,7 +21,7 @@ def read_variant(var_info, tx, ensemb_ref=ensembl_grch37, catch_errors=False):
     return myeffect
 
 
-def read_maf(file_path, chrom=None, release=95, include_samples=False):
+def read_maf(file_path, chrom=None, release=75, include_samples=False):
     """Read a MAF file using varcode."""
     # varcode ensembl release
     data = EnsemblRelease(release)
@@ -42,7 +42,8 @@ def read_maf(file_path, chrom=None, release=95, include_samples=False):
         alt_ix = header.index('Tumor_Seq_Allele2')
         tx_ix = header.index('Transcript_ID')
         gene_ix = header.index('Hugo_Symbol')
-        samp_ix = header.index('Tumor_Sample_Barcode')
+        if include_samples:
+            samp_ix = header.index('Tumor_Sample_Barcode')
 
         # read data
         maf_list = list(myreader)

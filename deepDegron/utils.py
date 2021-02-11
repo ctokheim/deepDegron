@@ -189,7 +189,7 @@ def process_trunc_results(output_list):
 
 def process_ub_results(output_list):
     """Process the results from the degron enrichment analysis."""
-    mycols = ['gene', 'num_ub_site_muts', 'pvalue']
+    mycols = ['gene', 'num_ub_site_muts', 'pvalue', 'total_muts', 'average position']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
