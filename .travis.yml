@@ -14,6 +14,7 @@ install:
 - conda update -q conda
 - conda info -a
 - conda env create -f environment.yml
+- conda activate deepDegron
 #- conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas scikit-learn keras 
 #- source activate test-environment
 #- pip install pyensembl
