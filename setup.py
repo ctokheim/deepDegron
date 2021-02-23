@@ -25,14 +25,15 @@ setup(name='deepDegron',
         url=URL,
         packages=PACKAGES,
         license='Apache License, Version 2.0',
-        install_requires=['numpy', 'scipy', 'pandas', 'sklearn', 'pyensembl', 'varcode', 'tensorflow', 'keras'],
+        install_requires=['numpy==1.16.4', 'scipy', 'pandas', 'sklearn', 'pyensembl', 'varcode', 'tensorflow==1.14.0', 'keras'],
         package_data={
         },
         entry_points={
-            'console_scripts':[
+            'console_scripts': [
                 'train_cterm_model = deepDegron.train_cterm_nn:cli_main',
                 'train_nterm_model = deepDegron.train_nterm_nn:cli_main',
                 'deepDegron_test = deepDegron.statistical_test:cli_main',
+                'deepDegron_score = deepDegron.score_mutations:cli_main',
             ]
         },
         long_description=open('README.md').read(),

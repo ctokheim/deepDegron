@@ -20,4 +20,5 @@ install:
 #- pip install pyensembl
 #- pip install varcode
 - pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+- python setup.py install
 script: nosetests --nologcapture tests/

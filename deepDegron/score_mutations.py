@@ -264,7 +264,11 @@ def main(opts):
         mywriter = csv.writer(whandle, delimiter='\t', lineterminator='\n')
         mywriter.writerows(result)
 
-
-if __name__ == '__main__':
+def cli_main():
+    # run main with CLI options
     opts = parse_arguments()
     main(opts)
+
+
+if __name__ == '__main__':
+    cli_main()
