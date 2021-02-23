@@ -50,9 +50,9 @@ def parse_arguments():
     parser.add_argument('-n', '--nterm-models',
                         type=str, default=None,
                         help='Path to saved nterminal degron models')
-    parser.add_argument('-release', '--release',
+    parser.add_argument('-e', '--ensembl-release',
                         type=int, default=75,
-                        help='Ensembl release')
+                        help='Ensembl release version number for gene annotations in varcode')
     parser.add_argument('-r', '--raw',
                         action='store_true', default=False,
                         help='Use raw deepDegron score')
@@ -77,7 +77,7 @@ def singleprocess_score(info):
     """Unpacks the multiprocess input"""
     options, mychr = info
     analysis_type = check_analysis_type(options)
-    return analyze(options, chrom=mychr, analysis=analysis_type, release=options['release'])
+    return analyze(options, chrom=mychr, analysis=analysis_type, release=options['ensembl_release'])
 
 def multiprocess_score(opts):
     """Handles parallelization of permutations by splitting work
@@ -111,7 +111,7 @@ def multiprocess_score(opts):
             pool.join()
     else:
         analysis_type = check_analysis_type(opts)
-        result_list += analyze(opts, analysis=analysis_type, release=opts['release'])
+        result_list += analyze(opts, analysis=analysis_type, release=opts['ensembl_release'])
 
     return result_list
 
