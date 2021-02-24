@@ -66,7 +66,7 @@ def parse_arguments():
                         help='Number of simulations in statistical test')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
-                        help='Number of processes')
+                        help='Number of computer processes to parallelize calcuations')
     parser.add_argument('-e', '--ensembl-release',
                         type=int, default=75,
                         help='Ensembl release version number for gene annotations in varcode (default: 75)')

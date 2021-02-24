@@ -58,7 +58,7 @@ def parse_arguments():
                         help='Use raw deepDegron score')
     parser.add_argument('-p', '--processes',
                         type=int, default=0,
-                        help='Number of processes')
+                        help='Number of computer processes to parallelize calculations')
     parser.add_argument('-o', '--output',
                         type=str, required=True,
                         help='Result file')
