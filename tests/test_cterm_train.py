@@ -7,7 +7,7 @@ sys.path.append(os.path.join(file_dir, '../'))
 import deepDegron.train_cterm_nn as train
 
 
-def test_train_cterm():
+def train_cterm():
     # make output directory if it doesn't exist
     outdir = os.path.join(file_dir, 'output')
     if not os.path.exists(outdir): os.mkdir(outdir)
