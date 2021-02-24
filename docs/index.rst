@@ -21,9 +21,9 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
-   quickstart_opencravat
    download
    installation
+   tutorial
    faq
 
 Citation
