@@ -33,7 +33,7 @@ def parse_arguments():
     parser.add_argument('-t', '--test-pred',
                         type=str, required=True,
                         help='File to save predictions for the test set')
-    parser.add_argument('-b', '--bag-of-words',
+    parser.add_argument('-b', '--bag-of-aa',
                         type=str, required=True,
                         help='bag of words trained model')
     parser.add_argument('-s', '--sequence-specific',
@@ -143,12 +143,12 @@ def main(opts):
     clf2 = degron_pred.train_ff_nn(X, y, size=best_size, dropout=best_dropout,
                                    layers=best_layer, epochs=best_epochs)
     ypred_clf2 = clf2.predict_proba(X)[:,0]
-    feature_df['bag of words'] = ypred_clf2
-    feature_df['regulatory potential'] = feature_df['sequence position specific'] - feature_df['bag of words']
+    feature_df['bag of amino acids'] = ypred_clf2
+    feature_df['regulatory potential'] = feature_df['sequence position specific'] - feature_df['bag of amino acids']
     # save as pickle files
     with open(opts['sequence_specific'], 'wb') as handle:
         pickle.dump(clf1, handle)
-    with open(opts['bag_of_words'], 'wb') as handle:
+    with open(opts['bag_of_aa'], 'wb') as handle:
         pickle.dump(clf2, handle)
     # save scores
     feature_df.to_csv(opts['output'], sep='\t', index=False)
