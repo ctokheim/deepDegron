@@ -38,4 +38,4 @@ You can obtain the set of mutations used for training from github for `c-termina
 
 **What file format should I use for mutations?**
 
-deepDegron currently only reads `MAF files (Mutation Annotation Format)<https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/>`_. Please also see the :ref:`format-ref`.
+deepDegron currently only reads `MAF files <https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/>`_. Please also see the :ref:`format-ref` page.
