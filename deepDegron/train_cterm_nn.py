@@ -35,7 +35,7 @@ def parse_arguments():
                         help='File to save predictions for the test set')
     parser.add_argument('-b', '--bag-of-aa',
                         type=str, required=True,
-                        help='bag of words trained model')
+                        help='bag of amino acids trained model')
     parser.add_argument('-s', '--sequence-specific',
                         type=str, required=True,
                         help='sequence specific trained model')

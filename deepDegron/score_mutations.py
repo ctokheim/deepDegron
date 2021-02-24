@@ -52,7 +52,7 @@ def parse_arguments():
                         help='Path to saved nterminal degron models')
     parser.add_argument('-e', '--ensembl-release',
                         type=int, default=75,
-                        help='Ensembl release version number for gene annotations in varcode')
+                        help='Ensembl release version number for gene annotations in varcode (default: 75)')
     parser.add_argument('-r', '--raw',
                         action='store_true', default=False,
                         help='Use raw deepDegron score')

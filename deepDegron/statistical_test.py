@@ -69,7 +69,7 @@ def parse_arguments():
                         help='Number of processes')
     parser.add_argument('-e', '--ensembl-release',
                         type=int, default=75,
-                        help='Ensembl release version number for gene annotations in varcode')
+                        help='Ensembl release version number for gene annotations in varcode (default: 75)')
     parser.add_argument('-o', '--output',
                         type=str, required=True,
                         help='Result file')
