@@ -11,6 +11,7 @@ import os
 file_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(file_dir, '../'))
 os.environ['OMP_NUM_THREADS'] = "1"
+os.environ['KMP_WARNINGS'] = '0'
 
 import argparse
 import pandas as pd
