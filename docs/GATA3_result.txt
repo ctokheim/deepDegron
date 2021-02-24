@@ -1,0 +1,2 @@
+gene	delta_degron_potential	pvalue	num_degron_impactful_muts	total_muts	average position	qvalue
+GATA3	-23.088945388793945	0.0	55	96	0.8279821456056641	0.0
