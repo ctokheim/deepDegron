@@ -14,16 +14,11 @@ def test_train_cterm():
 
     # train c-terminal model
     opts = {
-        'input': os.path.join(file_dir, 'data/gps_cterminal_degron_screen_1k.txt'),
+        'input': os.path.join(file_dir, 'data/gps_cterminal_degron_screen_500.txt'),
         'validation_perf': os.path.join(file_dir, 'output/cterm_validation_performance.txt'),
         'test_pred': os.path.join(file_dir, 'output/cterm_test_set_prediction.txt'),
         'bag_of_aa': os.path.join(file_dir, 'output/cterm_neural_network_bag_of_amino_acids.pickle'),
         'sequence_specific': os.path.join(file_dir, 'output/cterm_neural_network_pos_specific.pickle'),
         'output': os.path.join(file_dir, 'output/cterminal_degron_predictions.txt')
     }
-    try:
-        train.main(opts)
-    except:
-        import IPython ; IPython.embed() ; raise
-
-test_train_cterm()
+    train.main(opts)
