@@ -11,10 +11,27 @@ Otherwise, create a new post with the deepDegron tag. We will be checking
 biostars for questions. You may also contact me directly at
 ctokheim AT ds DOT dfci DOT harvard DOT edu.
 
-**Where can I obtain the training data for CHASMplus?**
+**Can I run deepDegron using mutations annotated on hg19 and/or hg38?**
 
-You can obtain the set of mutations used for training from `here <http://karchinlab.org/data/CHASMplus/formatted_training_list.txt.gz>`_.
+Yes, deepDegron supports both hg19 and hg38. You will, however, need to download the relevant reference data for pyensembl first. We recommend ensembl release 75 for hg19:
 
-**I want to compare my method to CHASMplus. How should I do it?**
+.. code-block:: bash
+    
+    $ pyensembl install --release 75 --species human  # download hg19 human reference data 
 
-I recommend using the precomputed scores available through OpenCRAVAT [see :ref:`quickstart-ref`]. Scores in the precompute were generated using gene-hold out cross-validation, so there is no issue when evaluating performance about training set overlap leading to overfitting. However, the scores do reflect training based on data from The Cancer Genome Atlas (TCGA). If a new method is trained using more data than is available from the TCGA, then it is recommended to create a new CHASMplus model based on the larger data set by using the CHASMplus source code.
+For hg38, we recommend ensembl release 95:
+
+.. code-block:: bash
+    
+    $ pyensembl install --release 95 --species human  # download hg38 human reference data 
+
+To correctly specify which reference genome you are using, please supply the relevant ensembl release number to --ensembl-release flag in deepDegron.
+
+.. code-block:: bash
+    
+    $ deepDegron_test [options] --ensembl-release 75 # for hg19
+    $ deepDegron_test [options] --ensembl-release 95 # for hg38
+
+**Where can I obtain the training data for deepDegron?**
+
+You can obtain the set of mutations used for training from github for `c-terminal degrons <https://raw.githubusercontent.com/ctokheim/deepDegron/master/train_data/gps_cterminal_degron_screen.txt>`_ and `n-terminal degrons <https://raw.githubusercontent.com/ctokheim/deepDegron/master/train_data/gps_nterminal_degron_screen.txt>`_.
