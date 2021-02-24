@@ -30,6 +30,4 @@ Contents:
 Citation
 --------
 
-Please cite our paper:
-
 Tokheim, C., Wang, X., Timms, R.T., Zhang, B., Mena, E.L., Wang, B., Chen, C., Ge, J., Chu, J., Zhang, W., et al. (2021). Systematic characterization of mutations altering protein degradation in human cancers. Mol Cell. `link <https://www.cell.com/molecular-cell/fulltext/S1097-2765(21)00040-X>`_
