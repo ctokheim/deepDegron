@@ -1,8 +1,8 @@
-numpy
+numpy==1.16.4
 scipy
 pandas
 sklearn
 pyensembl
 varcode
-tensorflow
+tensorflow==0.14.0
 keras
