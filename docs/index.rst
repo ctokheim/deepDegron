@@ -24,6 +24,7 @@ Contents:
    download
    installation
    tutorial
+   file_format
    faq
 
 Citation

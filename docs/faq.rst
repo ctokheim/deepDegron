@@ -35,3 +35,7 @@ To correctly specify which reference genome you are using, please supply the rel
 **Where can I obtain the training data for deepDegron?**
 
 You can obtain the set of mutations used for training from github for `c-terminal degrons <https://raw.githubusercontent.com/ctokheim/deepDegron/master/train_data/gps_cterminal_degron_screen.txt>`_ and `n-terminal degrons <https://raw.githubusercontent.com/ctokheim/deepDegron/master/train_data/gps_nterminal_degron_screen.txt>`_.
+
+**What file format should I use for mutations?**
+
+deepDegron currently only reads `MAF files (Mutation Annotation Format)<https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/>`_. Please also see the :ref:`format-ref`.
