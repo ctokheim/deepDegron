@@ -4,6 +4,10 @@ While a few UPS substrate mutations can be implicated in cancer based on known d
 
 [![Build Status](https://travis-ci.org/ctokheim/deepDegron.svg?branch=master)](https://travis-ci.org/ctokheim/deepDegron)
 
+## Documentation
+
+For more documentation, please visit our [website documentation](https://deepdegron.readthedocs.io/en/latest/index.html).
+
 ## Installation from source
 
 We recommend that you use python 3.7 to run deepDegron. As a first step, please change to the top-level directory in the deepDegron source code.
