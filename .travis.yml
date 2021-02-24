@@ -21,4 +21,4 @@ install:
 - train_nterm_model --help
 - deepDegron_test --help
 - deepDegron_score --help
-script: nosetests tests/
+script: nosetests --nocapture tests/
