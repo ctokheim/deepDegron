@@ -24,7 +24,7 @@ install:
 script: nosetests --nocapture tests/
 deploy:
   provider: pypi
-  username: ctokheim
+  username: __token__
   password:
     secure: Ty0YPvOvNUmyzsQbXxL5wMUJjYQ6YC+UQOh6qW3f5qX/zri8l+1L5tp+X8APRpNxR8FLbQ2V1xqDQd6owDhR2Qd2HBGrPQ0EvGW0id2/zx0EfqjGXP7kYtOolroLAIDzG44/q6UFGUyIe+Lkk9zdgMD+OaoosdZA9HxR5pzR8O5DseGXRqax6pKv5fYiUeyof+MX0biFAdyCDARoVDn6pHNBhkW+Xacn4Fmau9K9p2tjTb4ll8Lbu1Airiyv9XoYQc9twK8l4R85gMmEf77W0ZIt5G8bhZ9cwW3eJnEmb/IPUNKSyQz+cL1xUqo5JetNQ/O9E80sZaWYxSdGvJUYHmp99xFmFs/qtxxlDrwgcRyd8DbW1025XEq/zv0JnOfMqtnyHlQX9KY908NddJLiaHx915rcBLzXMNt6jyEAXuwqpJTmFJ10wOJgjEwPejjsBEQiEB/G6JKjAvAjyL6FKbRNcpUfn++/VEwzuH/KmhGAoaE41nzc3kWI3QWjPAcYxoeYuaVp3TbScKqRYMq4ADcWNSr/3DpfSjCOiEwhbSoMj5YgzNUqO9YqDsfcnxA82t3r/g61fA3ToUr0OOomnZumEItw2piRydaV48V8K/xsH3mC4rCwnDkE9UfVenYfUbDZfCP9EDlZ29EkuZkEwCUgH76DLXsgtibpYiU706M=
   on:
