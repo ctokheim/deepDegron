@@ -8,11 +8,21 @@ While a few UPS substrate mutations can be implicated in cancer based on known d
 
 For more documentation, please visit our [website documentation](https://deepdegron.readthedocs.io/en/latest/index.html).
 
-## Installation from source
+## Installation 
 
-We recommend that you use python 3.7 to run deepDegron. As a first step, please change to the top-level directory in the deepDegron source code.
+We recommend that you use python 3.7 to run deepDegron. 
 
-### Conda
+### pip
+
+The easiest way to install deepDegron is through [pip](https://pip.pypa.io/en/stable/).
+
+```bash
+$ pip install deepDegron
+```
+
+### From source
+
+As a first step, please change to the top-level directory in the deepDegron source code.
 
 You can install the dependencies of deepDegron using [conda](https://docs.conda.io/en/latest/). Once you have conda installed, create an environment to run deep degron using the following commands:
 
@@ -22,8 +32,6 @@ $ source activate deepDegron  # activate environment
 $ pyensembl install --release 75 --species human  # download human reference data
 $ python setup.py install  # install deepDegron
 ```
-
-### pip
 
 An alternative way to install the python dependencies is to use pip.
 

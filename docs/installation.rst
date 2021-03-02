@@ -6,6 +6,15 @@ Installation
 
 deepDegron has only been tested on linux operating systems. We recommend that you use **python 3.7** to run deepDegron.
 
+Install using PIP
+~~~~~~~~~~~~~~~~~
+
+The easiest way to install deepDegron is to use PIP.
+
+.. code-block:: bash
+
+   $ pip install deepDegron
+
 
 Installing from source
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -13,12 +22,12 @@ Installing from source
 Releases
 ++++++++
 
-First download the deepDegron source code on on `github <https://github.com/ctokheim/deepDegron>`_.
+First download the deepDegron source code on on `github <https://github.com/ctokheim/deepDegron/releases>`_.
 
 Once downloaded, please change to the top-level directory in the deepDegron source code.
 
-Conda Environment
-+++++++++++++++++
+Installing dependencies
++++++++++++++++++++++++
 
 We recommend using `conda <https://conda.io/docs/>`_ to install the deepDegron dependencies.
 
@@ -30,9 +39,6 @@ We recommend using `conda <https://conda.io/docs/>`_ to install the deepDegron d
    $ python setup.py install  # install deepDegron
 
 Make sure the deepDegron environment is activated when you want to run deepDegron.
-
-Pip
-+++
 
 An alternative way to install the python dependencies is to use pip.
 
