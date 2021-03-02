@@ -37,6 +37,7 @@ setup(name='deepDegron',
             ]
         },
         long_description=open('README.md').read(),
+        long_description_content_type='text/markdown',
         classifiers=['Topic :: Scientific/Engineering :: Bio-Informatics',
                     'Environment :: Console',
                     'Intended Audience :: Developers',
