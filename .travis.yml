@@ -4,7 +4,7 @@ python:
 branches:
   only:
   - master
-  - /^v.*$/
+  - "/^v.*$/"
 install:
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
 - bash miniconda.sh -b -p $HOME/miniconda
@@ -22,3 +22,11 @@ install:
 - deepDegron_test --help
 - deepDegron_score --help
 script: nosetests --nocapture tests/
+deploy:
+  provider: pypi
+  username: ctokheim
+  password:
+    secure: mdbjhRkGX0zsfv5hOG7n33kgc2Rlmm2kYkRX/32KR2XEmN2u6LGosV0IsPRQ3rWhPHMCzKO+yt9mymk1751kWu+5Kdd+SO+kj/nlayw0zLwpcJKt2AzRIEys12bwREXsb0Ae88VszL19hYNLWN5i0eWH5mtxDx9i8GIGIbnuTenD+fwVLhcgyXD6YE7F7wYJB3et0NdXfKS9BzXlAP6+LAgtlha1GyoIRUVmDoEEuZ3QdfRRDmHl/441wsHQZ6jHiOmfC2jU1UCc8ZBhTHn9wOhFw4o1NVLQjXe8OlAv485N3K34ieQ0f/PPhuso/MMRoYtKto6pRhRuGiRKVep4OudWy+5lFrtHTfSiec8Axzdsq+N6aE92YZ4Isw/2iZ9wphC/RkcYz7uh2nrwoKhOZscQzSftRWYiGrQDQOyubfcYio6OWOr/H3Q8bU8r5S7bzjJVgqMz3Bnr/6m6vtlghc6QO/d5QdVekmBPFlsdGM7EXGNfr3c2dT2DMc7IVjudBTsjlYeD21c7tRYq3kRz7jhKapqnJaeWt5qR36HdiCEyjrkcx9dAqAF8nkd7cDS4FSRDJNpa+fSPnamuvo3Qgb6gxDZ53N4dM1VUcf6JKTv0TCtEu0bvGcESLeVWYgwk03mHMLGXwgi2QJy5uOQx3JxeF3FrOHf4MzcXEXP45Sg=
+  on:
+    tags: true
+    branch: master
