@@ -23,7 +23,7 @@ To obtain delta degron potential scores for mutations, you can use the deepDegro
 
 .. code-block:: bash
     
-    $ deepDegron_score -i gata3_mutations.txt -c models/cterm/neural_network_pos_specific.pickle,models/cterm/neural_network_bag_of_amino_acids.pickle -o GATA3_delta_degron_potential.txt
+    $ deepdegron score -i gata3_mutations.txt -c models/cterm/neural_network_pos_specific.pickle,models/cterm/neural_network_bag_of_amino_acids.pickle -o GATA3_delta_degron_potential.txt
 
 You will notice the output file will contain all mutations that impact the c-terminal protein sequence of GATA3, as well as the delta degron potential scores for each mutation. Notice for GATA3 that many are frameshift indels that have a very negative delta degron potential, indicating likely degron loss. You results should match the results seen `here <https://raw.githubusercontent.com/ctokheim/deepDegron/master/docs/GATA3_delta_degron_potential.txt>`_.
 
@@ -37,7 +37,7 @@ To run the deepDegron statistical test on GATA3, use the deepDegron_test command
 
 .. code-block:: bash
     
-    $ deepDegron_test -i gata3_mutations.txt -ns 100 -c models/cterm/neural_network_pos_specific.pickle,models/cterm/neural_network_bag_of_amino_acids.pickle -o GATA3_result.txt
+    $ deepdegron test -i gata3_mutations.txt -ns 100 -c models/cterm/neural_network_pos_specific.pickle,models/cterm/neural_network_bag_of_amino_acids.pickle -o GATA3_result.txt
 
 Because in this example we are analyzing c-terminal degrons, we supplied the trained deepDegron models using the -c flag. However, for analyzing n-terminal degrons, the -n flag should be used. Additionally, for this toy example, we used only 100 simulations (-ns parameter), but in practical applications this should be much larger (e.g. 10,000). Note, increasing the number of simulations increases precision but has a longer run time.
 
