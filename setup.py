@@ -34,6 +34,7 @@ setup(name='deepDegron',
                 'train_nterm_model = deepDegron.train_nterm_nn:cli_main',
                 'deepDegron_test = deepDegron.statistical_test:cli_main',
                 'deepDegron_score = deepDegron.score_mutations:cli_main',
+                'deepdegron = deepDegron.deep_degron:cli_main',
             ]
         },
         long_description=open('README.md').read(),
