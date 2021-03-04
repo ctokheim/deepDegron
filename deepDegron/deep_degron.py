@@ -30,7 +30,7 @@ def parse_arguments():
                                       description=help_info + 'DeepDegron can score a protein sequeqnce for potential to contain a degron.'
                                       'The score sub-command assesses whether a mutation changes deepDegron\'s prediction of a degron '
                                       '(i.e. delta degron potential).')
-    help_info = 'Evaluates whether a gene contains a signficant enrichment of mutations prediction to impact a degron.'
+    help_info = 'Evaluates whether a gene contains a signficant enrichment of mutations predicted to impact a degron.'
     parser_test = subparsers.add_parser('test',
                                         help=help_info,
                                         description='The "test" sub-command performs a statistical test '
