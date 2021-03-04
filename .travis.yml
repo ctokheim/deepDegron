@@ -21,6 +21,10 @@ install:
 - train_nterm_model --help
 - deepDegron_test --help
 - deepDegron_score --help
+- deepdegron test --help
+- deepdegron score--help
+- deepdegron nterm_train --help
+- deepdegron cterm_train --help
 script: nosetests --nocapture tests/
 deploy:
   provider: pypi
