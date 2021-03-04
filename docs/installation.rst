@@ -6,14 +6,16 @@ Installation
 
 deepDegron has only been tested on linux operating systems. We recommend that you use **python 3.7** to run deepDegron.
 
-Install using PIP
-~~~~~~~~~~~~~~~~~
+Installation by PIP
+~~~~~~~~~~~~~~~~~~~
 
 The easiest way to install deepDegron is to use PIP.
 
 .. code-block:: bash
 
    $ pip install deepDegron
+   $ pyensembl install --release 75 --species human  # download human hg19 reference data
+   $ pyensembl install --release 95 --species human  # download human hg19 reference data
 
 
 Installing from source

@@ -18,6 +18,8 @@ The easiest way to install deepDegron is through [pip](https://pip.pypa.io/en/st
 
 ```bash
 $ pip install deepDegron
+$ pyensembl install --release 75 --species human  # download human hg19 reference data
+$ pyensembl install --release 95 --species human  # download human hg38 reference data
 ```
 
 ### From source
