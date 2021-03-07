@@ -29,8 +29,8 @@ To correctly specify which reference genome you are using, please supply the rel
 
 .. code-block:: bash
     
-    $ deepDegron_test [options] --ensembl-release 75 # for hg19
-    $ deepDegron_test [options] --ensembl-release 95 # for hg38
+    $ deepdegron test [options] --ensembl-release 75 # for hg19
+    $ deepdegron test [options] --ensembl-release 95 # for hg38
 
 **Where can I obtain the training data for deepDegron?**
 
