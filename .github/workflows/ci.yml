@@ -23,17 +23,18 @@ jobs:
       - run: ls
       - run: conda env create -f environment.yml
       - run: conda env list
-      - run: source /usr/share/miniconda/bin/activate deepDegron
-      - run: conda list
-      - run: export PATH="/usr/share/miniconda/envs/deepDegron/bin:$PATH"
-      - run: pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
-      - run: python setup.py install
-      - run: train_cterm_model --help
-      - run: train_nterm_model --help
-      - run: deepDegron_test --help
-      - run: deepDegron_score --help
-      - run: deepdegron test --help
-      - run: deepdegron score --help
-      - run: deepdegron nterm_train --help
-      - run: deepdegron cterm_train --help
-      - run: nosetests --nocapture tests/
+      - run: |
+          source /usr/share/miniconda/bin/activate deepDegron
+      	  conda list
+          export PATH="/usr/share/miniconda/envs/deepDegron/bin:$PATH"
+          pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+          python setup.py install
+          train_cterm_model --help
+          train_nterm_model --help
+          deepDegron_test --help
+          deepDegron_score --help
+          deepdegron test --help
+          deepdegron score --help
+          deepdegron nterm_train --help
+          deepdegron cterm_train --help
+          nosetests --nocapture tests/
