@@ -22,7 +22,8 @@ jobs:
       - run: conda info -a
       - run: ls
       - run: conda env create -f environment.yml
-      - run: source $HOME/miniconda/bin/activate deepDegron
+      - run: conda env list
+      - run: source /usr/share/miniconda/bin/activate deepDegron
       - run: pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
       - run: python setup.py install
       - run: train_cterm_model --help
