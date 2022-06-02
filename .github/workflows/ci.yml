@@ -23,7 +23,8 @@ jobs:
       - run: ls
       - run: conda env create -f environment.yml
       - run: conda env list
-      - run: |
+      - name: Run Tests
+        run: |
           source /usr/share/miniconda/bin/activate deepDegron
       	  conda list
           export PATH="/usr/share/miniconda/envs/deepDegron/bin:$PATH"
