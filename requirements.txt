@@ -1,3 +1,4 @@
+setuptools<58
 numpy==1.16.5
 scipy
 pandas
