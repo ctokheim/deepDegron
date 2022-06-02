@@ -7,6 +7,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v1
       - uses: actions/setup-python@v3
         with:
           python-version: '3.6' 
@@ -19,7 +21,7 @@ jobs:
       - run: conda update -q conda
       - run: conda info -a
       - run: ls
-      - run: conda env create -f ../environment.yml
+      - run: conda env create -f environment.yml
       - run: source activate deepDegron
       - run: pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
       - run: python setup.py install
