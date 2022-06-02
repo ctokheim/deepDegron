@@ -18,7 +18,8 @@ jobs:
       - run: conda config --set always_yes yes --set changeps1 no
       - run: conda update -q conda
       - run: conda info -a
-      - run: conda env create -f environment.yml
+      - run: ls
+      - run: conda env create -f ../environment.yml
       - run: source activate deepDegron
       - run: pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
       - run: python setup.py install
