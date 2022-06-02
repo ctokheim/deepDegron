@@ -26,7 +26,7 @@ jobs:
       - name: Run Tests
         run: |
           source /usr/share/miniconda/bin/activate deepDegron
-      	  conda list
+          conda list
           export PATH="/usr/share/miniconda/envs/deepDegron/bin:$PATH"
           pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
           python setup.py install
