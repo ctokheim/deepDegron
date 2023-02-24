@@ -4,6 +4,7 @@ channels:
 - defaults
 dependencies:
 - pip
+- setuptools<58
 - numpy=1.16.5
 - scipy 
 - nose 

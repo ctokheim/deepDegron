@@ -1,0 +1,41 @@
+name: deepDegron CI
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.6' 
+          architecture: 'x64'
+      - run: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+      - run: bash miniconda.sh -b -p $HOME/miniconda
+      - run: export PATH="$HOME/miniconda/bin:$PATH"
+      - run: hash -r
+      - run: conda config --set always_yes yes --set changeps1 no
+      - run: conda update -q conda
+      - run: conda info -a
+      - run: ls
+      - run: conda env create -f environment.yml
+      - run: conda env list
+      - name: Run Tests
+        run: |
+          source /usr/share/miniconda/bin/activate deepDegron
+          conda list
+          export PATH="/usr/share/miniconda/envs/deepDegron/bin:$PATH"
+          pyensembl install --release 75 --species human --custom-mirror https://github.com/openvax/ensembl-data/releases/download/GRCh37.75/
+          python setup.py install
+          train_cterm_model --help
+          train_nterm_model --help
+          deepDegron_test --help
+          deepDegron_score --help
+          deepdegron test --help
+          deepdegron score --help
+          deepdegron nterm_train --help
+          deepdegron cterm_train --help
+          nosetests --nocapture tests/
