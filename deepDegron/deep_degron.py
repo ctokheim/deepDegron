@@ -80,6 +80,9 @@ def parse_arguments():
     parser_test.add_argument('-t', '--truncation',
                         action='store_true', default=False,
                         help='Analyze clustering of truncating mutations')
+    parser_test.add_argument('-stab', '--stability',
+                        action='store_true', default=False,
+                        help='Analyze mutations impact on thermodynamic stability')
     parser_test.add_argument('-s', '--sites',
                         type=str, default=None,
                         help='Sites of interest')

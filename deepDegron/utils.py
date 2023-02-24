@@ -187,9 +187,17 @@ def process_trunc_results(output_list):
     return output_df
 
 
+def process_stab_results(output_list):
+    """Process the results from the stability analysis."""
+    mycols = ['gene', 'ddg_avg', 'pvalue', 'total_muts', 'average position']
+    output_df = pd.DataFrame(output_list, columns=mycols)
+    output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
+    return output_df
+
+
 def process_ub_results(output_list):
     """Process the results from the degron enrichment analysis."""
-    mycols = ['gene', 'num_ub_site_muts', 'pvalue', 'total_muts', 'average position']
+    mycols = ['gene', 'num_site_muts', 'pvalue', 'total_muts', 'average position']
     output_df = pd.DataFrame(output_list, columns=mycols)
     output_df['qvalue'] = pvalue.bh_fdr(output_df['pvalue'])
     return output_df
@@ -241,3 +249,16 @@ def fetch_tx_by_gene(gene_name, ensembl_data):
             tx_list.append(tx)
     return tx_list
 
+
+def read_ddg_precompute(mypath):
+    """Read in the ddg values from foldx into a dictionary."""
+    ddg_dict = {}
+    with open(mypath) as handle:
+        myreader = csv.reader(handle, delimiter='\t')
+        myheader = next(myreader)
+        var_ix = myheader.index('variant')
+        energy_ix = myheader.index('total energy')
+
+        for line in myreader:
+            ddg_dict[line[var_ix]] = float(line[energy_ix])
+    return ddg_dict

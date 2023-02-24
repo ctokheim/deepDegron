@@ -303,3 +303,35 @@ def delta_prob_wildtype(tx, clf1, clf2, model='cterm', seq=None):
 
     return wt_df
 
+
+def ddg_old(variants, ddg_dict):
+    ddg_sum = 0
+    ct = 0
+    for v in variants:
+        var_str = v.short_description[2:]
+        tmp_ddg = ddg_dict.get(var_str, 0)
+        ddg_sum += tmp_ddg
+        if var_str in ddg_dict:
+            ct += 1
+    if ct:
+        ddg_avg = ddg_sum / float(ct)
+    else:
+        ddg_avg = 0
+    return ddg_avg
+
+
+def ddg(variants, ddg_dict):
+    ddg_sum = 0
+    ct = 0
+    tmp_dict = {}
+    for v in variants:
+        var_str = v.short_description[2:]
+        tmp_ddg = ddg_dict.get(var_str, 0)
+        #ddg_sum += tmp_ddg
+        if var_str in ddg_dict:
+            tmp_dict[var_str] = tmp_ddg
+    if tmp_dict:
+        ddg_avg = np.sum(list(tmp_dict.values())) / float(len(tmp_dict))
+    else:
+        ddg_avg = 0
+    return ddg_avg

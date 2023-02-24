@@ -127,6 +127,8 @@ def check_analysis_type(options):
         analysis_type = 'nterminus'
     elif options['truncation']:
         analysis_type = 'truncation'
+    elif options['stability']:
+        analysis_type = 'stability'
     else:
         analysis_type = 'sites'
     return analysis_type
@@ -207,6 +209,8 @@ def analyze(opts, chrom=None, analysis='degrons'):
             results = simulation.site(variant_list, tx, ub_intvls[ensembl_tx_name], num_simulations=opts['num_sim'])
         elif analysis == 'truncation':
             results = simulation.clustered_truncation(variant_list, tx, num_simulations=opts['num_sim'])
+        elif analysis == 'stability':
+            results = simulation.stability(variant_list, tx, num_simulations=opts['num_sim'])
 
         # append results
         if results:
@@ -228,6 +232,8 @@ def main(opts):
         output_df = utils.process_terminal_degron_results(results)
     elif opts['truncation']:
         output_df = utils.process_trunc_results(results)
+    elif opts['stability']:
+        output_df = utils.process_stab_results(results)
 
     # save the results
     output_df.to_csv(opts['output'], sep='\t', index=False)

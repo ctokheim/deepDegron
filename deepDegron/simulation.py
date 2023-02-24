@@ -5,6 +5,7 @@ import numpy as np
 from deepDegron import variants
 from deepDegron import utils
 from deepDegron import degron_pred
+import os
 
 def degron(variant_list,
            tx, deg_intervals,
@@ -149,7 +150,7 @@ def degron_with_indel(variant_list,
 
 
 def site(variant_list,
-         tx, ub_intervals,
+         tx, site_intervals,
          nuc_context=3,
          num_simulations=10000):
     # interpet variant context
@@ -165,19 +166,20 @@ def site(variant_list,
     seq_context = sc.SequenceContext(tx, nuc_context)
 
     # figure out how many overlap sites of interest
-    num_ub_mut = 0
-    for myvariant in var_sub:
-        num_ub_mut += utils.overlap_with_intervals(myvariant, ub_intervals)
+    num_site_mut = 0
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
+    for myvariant in var_sub_no_nmd:
+        num_site_mut += utils.overlap_with_intervals(myvariant, site_intervals)
 
     # return p-value of 1 if no degrons affected
-    if num_ub_mut == 0:
+    if num_site_mut == 0:
         return 0, 1
 
     # simulate new mutations
     random_sub = seq_context.random_pos(trinuc_count, num_simulations)
 
     # evaluate the simulations
-    ub_ct, iter_sim = 0, 0
+    site_ct, iter_sim = 0, 0
     tmp_mut_pos = np.hstack([abs_pos for ctxt, cds_pos, abs_pos in random_sub])
     for sim_pos in tmp_mut_pos:
         # get the variant effect for simulated mutations
@@ -185,24 +187,25 @@ def site(variant_list,
 
         # count the degron mutations
         sim_num_mut = 0
-        for sim_variant in sim_variant_subs:
-            sim_num_mut += utils.overlap_with_intervals(sim_variant, ub_intervals)
+        sim_variant_subs_no_nmd = utils.filter_nmd_subs(sim_variant_subs, tx)
+        for sim_variant in sim_variant_subs_no_nmd:
+            sim_num_mut += utils.overlap_with_intervals(sim_variant, site_intervals)
 
         # count if exceeds observed statistic
-        if sim_num_mut >= num_ub_mut:
-            ub_ct += 1
+        if sim_num_mut >= num_site_mut:
+            site_ct += 1
 
         # update iteration counter
         iter_sim += 1
 
         # stop if sufficient number of simulations reached
-        if ub_ct>=100:
+        if site_ct>=100:
             break
 
     # calculate p-value
-    ub_pval = ub_ct / float(iter_sim)
+    site_pval = site_ct / float(iter_sim)
 
-    return num_ub_mut, ub_pval
+    return num_site_mut, site_pval
 
 
 def terminal_degron(variant_list,
@@ -307,6 +310,80 @@ def terminal_degron(variant_list,
     delta_prob_pval = delta_prob_ct / float(iter_sim)
 
     return delta_prob, delta_prob_pval, num_impactful_muts
+
+
+def stability(variant_list, tx,
+              precompute_dir='/liulab/ctokheim/projects/alphafold2/output/precompute/',
+              nuc_context=1.5,
+              num_simulations=10000):
+    """Simulate the effect of mutations on protein stability by foldx.
+
+    """
+    # interpet variant context
+    var_sub, dna_change_sub, trinuc_context = sc.get_substitution_trinuc_context(variant_list, tx)
+    trinuc_context = [sc.get_chasm_context(nc) for nc in trinuc_context]
+    trinuc_count = collections.Counter(trinuc_context).items() # count the trinucleotides
+    var_sub_no_nmd = utils.filter_nmd_subs(var_sub, tx)
+
+    # return if no substitution
+    if not var_sub:
+        return None
+
+    # read in ddg for all possible variants
+    try:
+        ddg_scores = utils.read_ddg_precompute(os.path.join(precompute_dir, '{}.txt'.format(var_sub_no_nmd[0].gene_name)))
+    except:
+        # precompute file not found. Likely because of gene rename
+        return None
+    ddg_sum = degron_pred.ddg(var_sub_no_nmd, ddg_scores)
+
+    # skip if no terminal variants
+    if not ddg_sum>0:
+        return 0, 1
+
+    # create sequence context obj
+    seq_context = sc.SequenceContext(tx, nuc_context)
+    seq_context_indel = sc.SequenceContext(tx, 0)
+
+    # simulate new mutations
+    if var_sub:
+        random_sub = seq_context.random_pos(trinuc_count, num_simulations)
+        tmp_mut_pos = np.hstack([abs_pos for ctxt, cds_pos, abs_pos in random_sub])
+
+    # evaluate the simulations
+    num_sub = len(dna_change_sub)
+    ddg_ct, iter_sim = 0, 0
+    for i in range(num_simulations):
+        # get info for substitutions
+        if var_sub_no_nmd:
+            sim_pos = tmp_mut_pos[i, :]
+            sim_variant_subs = variants.get_mutation_info(sim_pos, tx, dna_change_sub)
+            num_sim_subs = len(sim_variant_subs)
+            # filter based on nmd
+            sim_variant_subs = utils.filter_nmd_subs(sim_variant_subs, tx)
+        else:
+            num_sim_subs = 0
+            sim_variant_subs = []
+
+        if not sim_variant_subs:
+            ddg_ct += 1
+        else:
+            # get scores from simulations
+            sim_ddg = degron_pred.ddg(sim_variant_subs, ddg_scores)
+            if sim_ddg >= ddg_sum:
+                ddg_ct += 1
+
+        # update number of iterations
+        iter_sim += 1
+
+        # stop if sufficient number of simulations reached
+        if ddg_ct>=100:
+            break
+
+    # compute p-value
+    ddg_pval = ddg_ct / float(iter_sim)
+
+    return ddg_sum, ddg_pval
 
 
 def clustered_truncation(variant_list,
